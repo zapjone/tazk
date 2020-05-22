@@ -8,5 +8,8 @@
     <artifactId>tazk</artifactId>
     <version>1.0</version>
 
+    <properties>
+    </properties>
+
 
 </project>

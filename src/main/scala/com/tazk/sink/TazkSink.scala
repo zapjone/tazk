@@ -8,6 +8,12 @@ package com.tazk.sink
  * @version 1.0, 2020/05/23
  *
  */
-trait TazkSink {
+trait TazkSink[T] {
+
+
+  /**
+   * 写入目标库
+   */
+  def write(t: T): Unit
 
 }

@@ -1,5 +1,7 @@
 package com.tazk.deploy
 
+import java.util
+
 import com.tazk.deploy.TazkExecutionEngingAction.TazkExecutionEngingAction
 import com.tazk.deploy.TazkMongoUpdateModeAction.TazkMongoUpdateModeAction
 import com.tazk.deploy.TazkSubmitAction.TazkSubmitAction
@@ -164,6 +166,14 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
   override protected def handleUnknown(opt: String): Boolean = {
     TazkSubmit.printErrorAndExit(s"Unrecognized option '$opt'.")
     false
+  }
+
+  /**
+   * 输入扩展参数
+   */
+  override protected def handleExtraArgs(extra: util.List[String]): Unit = {
+    // 当前不支持扩展参数
+    printUsageAndExit(1)
   }
 
   /**

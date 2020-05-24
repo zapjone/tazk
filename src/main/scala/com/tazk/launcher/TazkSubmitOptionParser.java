@@ -49,6 +49,7 @@ public class TazkSubmitOptionParser {
     protected final String MONGO_UPDATE_KEY = "--mongo-update-key";
     protected final String MONGO_IGNORE_UPDATE_KEY = "--mongo-ignore-update-key";
     protected final String MONGO_UPDATE_MODE = "--mongo-update-mode";
+    protected final String MONGO_CAMEL_CONVERT = "--mongo-camel-convert";
 
     /**
      * hive launcher arguments.
@@ -97,6 +98,7 @@ public class TazkSubmitOptionParser {
             {MONGO_UPDATE_KEY},
             {MONGO_IGNORE_UPDATE_KEY},
             {MONGO_UPDATE_MODE},
+            {MONGO_CAMEL_CONVERT},
             {HIVE_DATABASE},
             {HIVE_TABLE},
             {HIVE_AUTO_CREATE_TABLE},

@@ -47,6 +47,7 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
   var mongoUpdateKey: String = null
   var mongoIgnoreUpdateKey: String = null
   var mongoUpdateMode: TazkMongoUpdateModeAction = null
+  var mongoCamelConvert: Boolean = true
   var hiveDatabase: String = "default"
   var hiveTable: String = null
   var hiveAutoCreateTable: Boolean = false
@@ -91,6 +92,7 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
        |  mongo-update-key               $mongoUpdateKey
        |  mongo-ignore-update-key        $mongoIgnoreUpdateKey
        |  mongo-update-mode              $mongoUpdateMode
+       |  mongo-camel-convert            $mongoCamelConvert
        |  hive-database                  $hiveDatabase
        |  hive-table                     $hiveTable
        |  hive-auto-create-table         $hiveAutoCreateTable
@@ -144,6 +146,7 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
         case TazkMongoUpdateModeAction.allowDelete => TazkMongoUpdateModeAction.ALLOW_DELETE
         case _ => throw new IllegalArgumentException(s"[$value]不支持的导出模式")
       }
+      case MONGO_CAMEL_CONVERT => mongoCamelConvert = value.toBoolean
       case HIVE_DATABASE => hiveDatabase = value
       case HIVE_TABLE => hiveTable = value
       case HIVE_AUTO_CREATE_TABLE => hiveAutoCreateTable = value.toBoolean
@@ -225,6 +228,7 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
          |                                    allowInsert:只导出增加数据
          |                                    allowUpdate:导出新增数据和更新数据
          |                                    allowDelete:导出新增数据和更新历史数据，且删除历史不需要都数据
+         |  --mongo-camel-convert             是否进行驼峰命名转换，默认为true
          |
          | Hive-only:
          |  --hive-database                   hive数据库名称，默认default

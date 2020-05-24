@@ -1,5 +1,7 @@
 package com.tazk.source
 
+import java.util.regex.Pattern
+
 import com.mongodb.spark.MongoSpark
 import com.mongodb.spark.config.ReadConfig
 import org.apache.commons.codec.binary.Base64
@@ -22,7 +24,8 @@ class SparkMongoSource(spark: SparkSession,
                        password: String,
                        condition: Option[String],
                        conditionEncrypt: String,
-                       otherConf: Map[String, String]) extends TazkSource[Dataset[String]] {
+                       camelConvert: Boolean = true,
+                       otherConf: Map[String, String] = Map()) extends TazkSource[Dataset[String]] {
 
   private val YARN_MASTER = "yarn"
   private val CLUSTER_MODE = "cluster"
@@ -56,10 +59,31 @@ class SparkMongoSource(spark: SparkSession,
 
     // 读取mongo数据，如果有查询条件，则进行条件查询
     val mongoRDD = MongoSpark.load(spark.sparkContext, mongoConfig)
-    if (realMongoCondition.nonEmpty) {
+    val mongoDS = if (realMongoCondition.nonEmpty) {
       mongoRDD.withPipeline(Seq(Document.parse(realMongoCondition.get)))
         .mapPartitions(_.map(_.toJson())).toDS
     } else mongoRDD.mapPartitions(_.map(_.toJson())).toDS()
+
+    if (camelConvert) {
+      mongoDS.columns.foreach(colName => {
+        mongoDS.withColumnRenamed(colName, camelConvertFun(colName))
+      })
+      mongoDS
+    } else mongoDS
+
+  }
+
+  /**
+   * 进行驼峰命名转换
+   *
+   * @param colName 旧的驼峰名字
+   * @return 新的以下划线划分的名字
+   */
+  private def camelConvertFun(colName: String): String = {
+    colName.toCharArray.map(ch => {
+      if (ch >= 'A' && ch <= 'Z') s"_$ch".toLowerCase
+      else s"$ch"
+    }).mkString("")
   }
 
 

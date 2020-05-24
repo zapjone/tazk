@@ -26,6 +26,7 @@ public class TazkSubmitOptionParser {
     /**
      * spark launcher arguments.
      */
+    protected final String SPARK_HOME = "--spark-home";
     protected final String SPARK_MASTER = "--spark-master";
     protected final String SPARK_DEPLOY_MODE = "--spark-deploy-mode";
     protected final String SPARK_CONF = "--spark-conf";
@@ -79,6 +80,7 @@ public class TazkSubmitOptionParser {
             {USER_NAME},
             {PASSWORD},
             {JAR_ADDR},
+            {SPARK_HOME},
             {SPARK_MASTER},
             {SPARK_DEPLOY_MODE},
             {SPARK_CONF},

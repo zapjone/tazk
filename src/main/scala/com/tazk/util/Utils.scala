@@ -2,6 +2,7 @@ package com.tazk.util
 
 import java.util.Random
 
+import com.google.gson.Gson
 import com.tazk.internal.Logging
 
 /**
@@ -10,7 +11,7 @@ import com.tazk.internal.Logging
  * @version 1.0, 2020/5/22
  *
  */
-private[tazk] object Utils extends Logging{
+private[tazk] object Utils extends Logging {
 
   val random = new Random()
 
@@ -23,6 +24,14 @@ private[tazk] object Utils extends Logging{
   def classForName(className: String): Class[_] = {
     Class.forName(className, true, getContextOrTazkClassLoader)
     // scalastyle:on classforname
+  }
+
+  def toJSON[T](t: T): String = {
+    new Gson().toJson(t)
+  }
+
+  def parseObject[T](jsonStr: String, clazz: Class[T]): T = {
+    new Gson().fromJson[T](jsonStr, clazz)
   }
 
 }

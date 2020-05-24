@@ -2,9 +2,11 @@ package com.tazk.deploy
 
 import java.io.PrintStream
 
+import com.tazk.core.{SparkImportArguments, TazkImportFactory}
 import com.tazk.internal.Logging
 import com.tazk.util.CommandLineUtils
 import com.tazk.{deploy, _}
+import org.apache.spark.launcher.{SparkAppHandle, SparkLauncher}
 
 import scala.util.Properties
 
@@ -23,7 +25,7 @@ private[deploy] object TazkSubmitAction extends Enumeration {
   val EXPORT: deploy.TazkSubmitAction.Value = Value("export")
 }
 
-private[deploy] object TazkExecutionEngingAction extends Enumeration {
+private[tazk] object TazkExecutionEngingAction extends Enumeration {
   type TazkExecutionEngingAction = Value
   /**
    * 使用spark引擎执行
@@ -103,6 +105,39 @@ object TazkSubmit extends CommandLineUtils with Logging {
    * 导入
    */
   private def importAction(appArgs: TazkSubmitArguments, uninitLog: Boolean): Unit = {
+    val (className, appInputArgs) = TazkImportFactory.importAction(appArgs, appArgs.executionEngine)
+    // 使用SparkLauncher来启动程序
+    var launcher = new SparkLauncher()
+      .setSparkHome(appArgs.sparkHome)
+      .setMaster(appArgs.sparkMaster)
+      .setDeployMode(appArgs.sparkDeployMode)
+      .setAppName(appArgs.name)
+      .setMainClass(className)
+      .setAppResource(appArgs.jar)
+      .addAppArgs(appInputArgs)
+      .setConf("spark.queue", appArgs.sparkQueue)
+      .setConf("spark.driver.memory", appArgs.sparkDriverMemory)
+      .setConf("spark.driver.cores", appArgs.sparkDriverCores)
+      .setConf("spark.num.executors", appArgs.sparkNumExecutor)
+      .setConf("spark.executor.memory", appArgs.sparkExecutorMemory)
+      .setConf("spark.executor.cores", appArgs.sparkExecutorCores)
+      .setConf("spark.cores.max", appArgs.sparkTotalExecutorCores)
+
+    // 添加spark启动conf信息
+    appArgs.sparkProperties.foreach(entry => {
+      launcher = launcher.setConf(entry._1, entry._2)
+    })
+
+    // 开始启动Spark程序
+    launcher.setVerbose(true).startApplication(new SparkAppHandle.Listener {
+      override def stateChanged(handle: SparkAppHandle): Unit = {
+        println(handle.getState)
+      }
+
+      override def infoChanged(handle: SparkAppHandle): Unit = {
+        println(handle.getState)
+      }
+    })
   }
 
   /**
@@ -110,6 +145,5 @@ object TazkSubmit extends CommandLineUtils with Logging {
    */
   private def exportAction(appArgs: TazkSubmitArguments, uninitLog: Boolean): Unit = {
   }
-
 
 }

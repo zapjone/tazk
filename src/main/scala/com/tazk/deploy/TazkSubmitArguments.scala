@@ -18,7 +18,7 @@ import scala.collection.mutable.HashMap
  * @version 1.0, 2020/5/22
  *
  */
-private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, String] = sys.env) extends TazkSubmitArgumentsParser {
+private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, String] = sys.env) extends TazkSubmitArgumentsParser {
 
   var action: TazkSubmitAction = null
   var executionEngine: TazkExecutionEngingAction = TazkExecutionEngingAction.SPARK
@@ -28,6 +28,7 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
   var username: String = null
   var password: String = null
   var jar: String = null
+  var sparkHome: String = null
   var sparkMaster: String = "yarn"
   var sparkDeployMode: String = "cluster"
   val sparkProperties: HashMap[String, String] = new HashMap[String, String]()
@@ -36,7 +37,7 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
   var sparkDriverMemory: String = "1G"
   var sparkDriverCores: String = "1"
   var sparkExecutorMemory: String = "1G"
-  var sparkExecutorCore: String = "1"
+  var sparkExecutorCores: String = "1"
   var sparkTotalExecutorCores: String = null
   var sparkNumExecutor: String = null
   var mongoDatabase: String = null
@@ -59,6 +60,7 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
   var hiveDynamicPartitionKey: String = null
 
   // Set parameters from command line arguments
+  loadEnvironmentInfo()
   try {
     if (null == args || args.isEmpty || (!Array("import", "export").contains(args.head))) {
       printUsageAndExit(1)
@@ -84,7 +86,7 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
        |  spark-executor-memory          $sparkExecutorMemory
        |  spark-total-executor-cores     $sparkTotalExecutorCores
        |  spark-num-executors            $sparkNumExecutor
-       |  spark-executor-core            $sparkExecutorCore
+       |  spark-executor-core            $sparkExecutorCores
        |  mongo-database                 $mongoDatabase
        |  mongo-collection               $mongoCollection
        |  mongo-import-condition         $mongoImportCondition
@@ -118,6 +120,7 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
       case USER_NAME => username = value
       case PASSWORD => password = value
       case JAR_ADDR => jar = value
+      case SPARK_HOME => sparkHome = value
       case SPARK_MASTER => sparkMaster = value
       case SPARK_DEPLOY_MODE => sparkDeployMode = value
       case SPARK_CONF =>
@@ -130,7 +133,7 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
       case SPARK_EXECUTOR_MEM => sparkExecutorMemory = value
       case SPARK_TOTAL_EXECUTOR_CORES => sparkTotalExecutorCores = value
       case SPARK_NUM_EXECUTORS => sparkNumExecutor = value
-      case SPARK_EXECUTOR_CORES => sparkExecutorCore = value
+      case SPARK_EXECUTOR_CORES => sparkExecutorCores = value
       case MONGO_DATABASE => mongoDatabase = value
       case MONGO_COLLECTION => mongoCollection = value
       case MONGO_EXTERNAL_CONF =>
@@ -258,6 +261,11 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
     case _ => throw new IllegalArgumentException(String.format("[%s]当前不支持的操作，目前只支持import/export", mode))
   }
 
+  private def loadEnvironmentInfo(): Unit = {
+    // 从环境变量中获取Spark安装路径
+    sparkHome = env.getOrElse("SPARK_HOME", env.getOrElse("TAZK_SPARK_HOME", null))
+  }
+
 
   /**
    * 验证输入参数
@@ -285,6 +293,9 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
     }
     if (null == hiveTable || hiveTable.trim.length <= 0) {
       TazkSubmit.printErrorAndExit("No hive table set; please specify one with --hive-table")
+    }
+    if (executionEngine == TazkExecutionEngingAction.SPARK && null == sparkHome) {
+      throw new IllegalArgumentException("当执行引擎为Spark时，SPARK_HOME必须配置")
     }
     // 根据同步方式验证参数
     action match {

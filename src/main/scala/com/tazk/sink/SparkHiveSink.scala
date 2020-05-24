@@ -22,7 +22,7 @@ class SparkHiveSink(spark: SparkSession,
   /**
    * 写入目标库
    */
-  override def write(dataset: Dataset[String]): Unit = {
+  override def write(dataset: Dataset[String]): Long = {
 
     // 检查分区键和值是否对应
     if (null != partitionKey && null != partitionValue) {
@@ -45,6 +45,10 @@ class SparkHiveSink(spark: SparkSession,
       }
     }
 
+    val mongoCount = spark.sparkContext.longAccumulator("SPARK_IMPORT_MONGO_COUNT")
+
+    dataset.foreachPartition(iter => mongoCount.add(iter.size))
+
     // 分区写入
     val partitionOption = partitionInfo(partitionKey, partitionValue)
     if (partitionOption.nonEmpty) {
@@ -65,6 +69,7 @@ class SparkHiveSink(spark: SparkSession,
           .mode(SaveMode.Overwrite).saveAsTable(table)
       }
     }
+    mongoCount.value
 
   }
 

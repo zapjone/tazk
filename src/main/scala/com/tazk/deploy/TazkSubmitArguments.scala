@@ -27,6 +27,7 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
   var connect: String = null
   var username: String = null
   var password: String = null
+  var jar: String = null
   var sparkMaster: String = "yarn"
   var sparkDeployMode: String = "cluster"
   val sparkProperties: HashMap[String, String] = new HashMap[String, String]()
@@ -114,6 +115,7 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
       case CONNECT => connect = value
       case USER_NAME => username = value
       case PASSWORD => password = value
+      case JAR_ADDR => jar = value
       case SPARK_MASTER => sparkMaster = value
       case SPARK_DEPLOY_MODE => sparkDeployMode = value
       case SPARK_CONF =>
@@ -261,12 +263,13 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
     if (null == connect || connect.trim.length <= 0) {
       TazkSubmit.printErrorAndExit("No connect set; please specify one with --connect")
     }
-    if (null == username || username.trim.length <= 0) {
+    // 用户名和密码可以配置在uri中
+    /*if (null == username || username.trim.length <= 0) {
       TazkSubmit.printErrorAndExit("No username set; please specify one with --username")
     }
     if (null == password || password.trim.length <= 0) {
       TazkSubmit.printErrorAndExit("No password set; please specify one with --password")
-    }
+    }*/
     if (null == mongoDatabase || mongoDatabase.trim.length <= 0) {
       TazkSubmit.printErrorAndExit("No mongo database set; please specify one with --mongo-database")
     }

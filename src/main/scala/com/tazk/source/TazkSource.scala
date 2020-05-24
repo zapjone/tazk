@@ -8,6 +8,11 @@ package com.tazk.source
  * @version 1.0, 2020/05/23
  *
  */
-trait TazkSource {
+trait TazkSource[T] {
+
+  /**
+   * 读取数据
+   */
+  def read(): T
 
 }

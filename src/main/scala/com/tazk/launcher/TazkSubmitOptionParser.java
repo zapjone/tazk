@@ -165,7 +165,6 @@ public class TazkSubmitOptionParser {
         if (idx < args.size()) {
             idx++;
         }
-        handleExtraArgs(args.subList(idx, args.size()));
     }
 
     protected boolean handle(String opt, String value) {
@@ -177,10 +176,6 @@ public class TazkSubmitOptionParser {
         throw new UnsupportedOperationException();
     }
 
-
-    protected void handleExtraArgs(List<String> extra) {
-        throw new UnsupportedOperationException();
-    }
 
     private String findCliOption(String name, String[][] available) {
         for (String[] candidates : available) {

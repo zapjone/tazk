@@ -169,14 +169,6 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
   }
 
   /**
-   * 输入扩展参数
-   */
-  override protected def handleExtraArgs(extra: util.List[String]): Unit = {
-    // 当前不支持扩展参数
-    printUsageAndExit(1)
-  }
-
-  /**
    * 显示输出信息
    *
    * @param exitCode     退出码

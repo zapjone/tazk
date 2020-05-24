@@ -27,7 +27,7 @@ trait CommandLineUtils {
 
   // scalastyle:on println
 
-  private[tazk] def parseSparkConfProperty(pair: String): (String, String) = {
+  private[tazk] def parseTazkConfProperty(pair: String): (String, String) = {
     pair.split("=", 2).toSeq match {
       case Seq(k, v) => (k, v)
       case _ => printErrorAndExit(s"Tazk config without '=': $pair")

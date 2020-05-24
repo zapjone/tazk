@@ -13,5 +13,5 @@ class TazkException(message: String, cause: Throwable)
   def this(message: String) = this(message, null)
 }
 
-private[spark] case class SparkUserAppException(exitCode: Int)
+private[tazk] case class SparkUserAppException(exitCode: Int)
   extends TazkException(s"User application exited with $exitCode")

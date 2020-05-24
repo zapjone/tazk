@@ -13,12 +13,12 @@ package object tazk {
   private object TazkBuildInfo {
 
     val (
-      spark_version: String,
-      spark_branch: String,
-      spark_revision: String,
-      spark_build_user: String,
-      spark_repo_url: String,
-      spark_build_date: String) = {
+      tazk_version: String,
+      tazk_branch: String,
+      tazk_revision: String,
+      tazk_build_user: String,
+      tazk_repo_url: String,
+      tazk_build_date: String) = {
 
       val resourceStream = Thread.currentThread().getContextClassLoader.
         getResourceAsStream("tazk-version-info.properties")
@@ -54,11 +54,11 @@ package object tazk {
     }
   }
 
-  val TAZK_VERSION = TazkBuildInfo.spark_version
-  val TAZK_BRANCH = TazkBuildInfo.spark_branch
-  val TAZK_REVISION = TazkBuildInfo.spark_revision
-  val TAZK_BUILD_USER = TazkBuildInfo.spark_build_user
-  val TAZK_REPO_URL = TazkBuildInfo.spark_repo_url
-  val TAZK_BUILD_DATE = TazkBuildInfo.spark_build_date
+  val TAZK_VERSION = TazkBuildInfo.tazk_version
+  val TAZK_BRANCH = TazkBuildInfo.tazk_branch
+  val TAZK_REVISION = TazkBuildInfo.tazk_revision
+  val TAZK_BUILD_USER = TazkBuildInfo.tazk_build_user
+  val TAZK_REPO_URL = TazkBuildInfo.tazk_repo_url
+  val TAZK_BUILD_DATE = TazkBuildInfo.tazk_build_date
 
 }

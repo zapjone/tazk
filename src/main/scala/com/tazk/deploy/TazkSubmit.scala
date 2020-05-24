@@ -1,6 +1,6 @@
 package com.tazk.deploy
 
-import com.tazk._
+import com.tazk.{deploy, _}
 import com.tazk.internal.Logging
 import com.tazk.util.CommandLineUtils
 
@@ -12,10 +12,36 @@ import scala.util.Properties
 private[deploy] object TazkSubmitAction extends Enumeration {
   type TazkSubmitAction = Value
   /**
-   * 提交任务
+   * 导入
    */
-  val SUBMIT = Value
+  val IMPORT: deploy.TazkSubmitAction.Value = Value("import")
+  /**
+   * 导出
+   */
+  val EXPORT: deploy.TazkSubmitAction.Value = Value("export")
 }
+
+private[deploy] object TazkExecutionEngingAction extends Enumeration {
+  type TazkExecutionEngingAction = Value
+  /**
+   * 使用spark引擎执行
+   */
+  val SPARK: deploy.TazkExecutionEngingAction.Value = Value("spark")
+}
+
+/**
+ * mongo更新模式
+ */
+private[deploy] object TazkMongoUpdateModeAction extends Enumeration {
+  val allowInsert = "allowInsert"
+  val allowUpdate = "allowUpdate"
+  val allowDelete = "allDelete"
+  type TazkMongoUpdateModeAction = Value
+  val ALLOW_INSERT: deploy.TazkMongoUpdateModeAction.Value = Value(allowInsert)
+  val ALLOW_UPDATE: deploy.TazkMongoUpdateModeAction.Value = Value(allowUpdate)
+  val ALLOW_DELETE: deploy.TazkMongoUpdateModeAction.Value = Value(allowDelete)
+}
+
 
 /**
  * Main gateway of launching a Tazk application.
@@ -47,6 +73,9 @@ object TazkSubmit extends CommandLineUtils with Logging {
 
   override def main(args: Array[String]): Unit = {
 
-    val appArgs = new TazkSubmitArguments(args)
+    // 解析输入参数
+    val appArgs = new TazkSubmitArguments(args.toList)
+
+
   }
 }

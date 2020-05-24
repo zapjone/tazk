@@ -18,7 +18,7 @@ import scala.collection.mutable.HashMap
  */
 private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, String] = sys.env) extends TazkSubmitArgumentsParser {
 
-  var syncMode: TazkSubmitAction = null
+  var action: TazkSubmitAction = null
   var executionEngine: TazkExecutionEngingAction = TazkExecutionEngingAction.SPARK
   var name: String = null
   var verbose: Boolean = false
@@ -59,7 +59,7 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
     if (null == args || args.isEmpty || (!Array("import", "export").contains(args.head))) {
       printUsageAndExit(1)
     } else {
-      syncMode = syncModeParse(args.head)
+      action = syncModeParse(args.head)
       parse(args.tail.asJava)
     }
   } catch {
@@ -278,7 +278,7 @@ private[deploy] class TazkSubmitArguments(args: List[String], env: Map[String, S
       TazkSubmit.printErrorAndExit("No hive table set; please specify one with --hive-table")
     }
     // 根据同步方式验证参数
-    syncMode match {
+    action match {
       case TazkSubmitAction.IMPORT => validateImportArguments()
       case TazkSubmitAction.EXPORT => validateExportArguments()
     }

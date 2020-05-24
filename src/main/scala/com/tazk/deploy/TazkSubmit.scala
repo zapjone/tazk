@@ -1,8 +1,10 @@
 package com.tazk.deploy
 
-import com.tazk.{deploy, _}
+import java.io.PrintStream
+
 import com.tazk.internal.Logging
 import com.tazk.util.CommandLineUtils
+import com.tazk.{deploy, _}
 
 import scala.util.Properties
 
@@ -50,7 +52,20 @@ object TazkSubmit extends CommandLineUtils with Logging {
 
 
   private[tazk] def printVersionAndExit(): Unit = {
-    printStream.println(
+    printWelcomeInfo(printStream)
+    printStream.println("Branch %s".format(TAZK_BRANCH))
+    printStream.println("Compiled by user %s on %s".format(TAZK_BUILD_USER, TAZK_BUILD_DATE))
+    printStream.println("Revision %s".format(TAZK_REVISION))
+    printStream.println("Url %s".format(TAZK_REPO_URL))
+    printStream.println("Type --help for more information.")
+    exitFn(0)
+  }
+
+  /**
+   * 输出欢迎信息
+   */
+  private def printWelcomeInfo(out: PrintStream): Unit = {
+    out.println(
       """Welcome to
           _________  ________  ________  ___  __
       |\___   ___\\   __  \|\_____  \|\  \|\  \
@@ -63,23 +78,20 @@ object TazkSubmit extends CommandLineUtils with Logging {
                         """.format(TAZK_VERSION))
     printStream.println("Using Scala %s, %s, %s".format(
       Properties.versionString, Properties.javaVmName, Properties.javaVersion))
-    printStream.println("Branch %s".format(TAZK_BRANCH))
-    printStream.println("Compiled by user %s on %s".format(TAZK_BUILD_USER, TAZK_BUILD_DATE))
-    printStream.println("Revision %s".format(TAZK_REVISION))
-    printStream.println("Url %s".format(TAZK_REPO_URL))
-    printStream.println("Type --help for more information.")
-    exitFn(0)
   }
 
   override def main(args: Array[String]): Unit = {
 
-    val uninitLog = initializeLogIfNecessary(true, silent = true)
+    val uninitLog = initializeLogIfNecessary(isInterpreter = true, silent = true)
 
     // 解析输入参数
     val appArgs = new TazkSubmitArguments(args.toList)
     if (appArgs.verbose) {
       printStream.println(appArgs)
     }
+
+    // 输出欢迎信息
+    printWelcomeInfo(System.out)
 
     appArgs.action match {
       case TazkSubmitAction.IMPORT => importAction(appArgs, uninitLog)

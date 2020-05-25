@@ -21,7 +21,7 @@ public class TazkSubmitOptionParser {
     protected final String CONNECT = "--connect";
     protected final String USER_NAME = "--username";
     protected final String PASSWORD = "--password";
-    protected final String JAR_ADDR = "--jar";
+    protected final String JAR_ADDR = "--tazk-jar";
 
     /**
      * spark launcher arguments.

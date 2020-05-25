@@ -136,6 +136,7 @@ object TazkSubmit extends CommandLineUtils with Logging {
         val state = handle.getState
         if (state.isFinal) {
           log.info(String.format("[%s]作业执行完成", handle.getAppId))
+          Thread.sleep(3000)
           countDownLatch.countDown()
         } else {
           println(state)

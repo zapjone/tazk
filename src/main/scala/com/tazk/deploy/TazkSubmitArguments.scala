@@ -1,12 +1,9 @@
 package com.tazk.deploy
 
-import java.util
-
 import com.tazk.deploy.TazkExecutionEngingAction.TazkExecutionEngingAction
 import com.tazk.deploy.TazkMongoUpdateModeAction.TazkMongoUpdateModeAction
 import com.tazk.deploy.TazkSubmitAction.TazkSubmitAction
 import com.tazk.launcher.TazkSubmitArgumentsParser
-import org.apache.spark.util.Utils
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable

@@ -1,7 +1,5 @@
 package com.tazk.source
 
-import java.util.regex.Pattern
-
 import com.mongodb.spark.MongoSpark
 import com.mongodb.spark.config.ReadConfig
 import org.apache.commons.codec.binary.Base64

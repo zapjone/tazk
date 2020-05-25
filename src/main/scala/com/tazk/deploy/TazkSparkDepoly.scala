@@ -28,7 +28,7 @@ private[tazk] class TazkSparkDepoly(clazz: String,
       .setMainClass(clazz)
       .setAppResource(appArgs.jar)
       .addAppArgs(appInputArgs)
-      .setConf("spark.queue", appArgs.sparkQueue)
+      .setConf("spark.yarn.queue", appArgs.sparkQueue)
       .setConf("spark.driver.memory", appArgs.sparkDriverMemory)
       .setConf("spark.driver.cores", appArgs.sparkDriverCores)
       .setConf("spark.num.executors", appArgs.sparkNumExecutor)

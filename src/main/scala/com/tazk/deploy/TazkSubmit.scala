@@ -116,7 +116,7 @@ object TazkSubmit extends CommandLineUtils with Logging {
       .setMainClass(className)
       .setAppResource(appArgs.jar)
       .addAppArgs(appInputArgs)
-      .setConf("spark.queue", appArgs.sparkQueue)
+      .setConf("spark.yarn.queue", appArgs.sparkQueue)
       .setConf("spark.driver.memory", appArgs.sparkDriverMemory)
       .setConf("spark.driver.cores", appArgs.sparkDriverCores)
       .setConf("spark.num.executors", appArgs.sparkNumExecutor)

@@ -1,6 +1,7 @@
 package com.tazk.deploy
 
 import java.io.PrintStream
+import java.util.concurrent.CountDownLatch
 
 import com.tazk.core.{SparkImportArguments, TazkImportFactory}
 import com.tazk.internal.Logging
@@ -129,15 +130,24 @@ object TazkSubmit extends CommandLineUtils with Logging {
     })
 
     // 开始启动Spark程序
+    val countDownLatch = new CountDownLatch(1)
     launcher.setVerbose(true).startApplication(new SparkAppHandle.Listener {
       override def stateChanged(handle: SparkAppHandle): Unit = {
-        println(handle.getState)
+        val state = handle.getState
+        if (state.isFinal) {
+          log.info(String.format("[%s]作业执行完成", handle.getAppId))
+          countDownLatch.countDown()
+        } else {
+          println(state)
+        }
       }
 
       override def infoChanged(handle: SparkAppHandle): Unit = {
-        println(handle.getState)
+        // nothing
       }
     })
+
+    countDownLatch.await()
   }
 
   /**

@@ -1,7 +1,5 @@
 package com.tazk.core
 
-import org.apache.spark.sql.SparkSession
-
 /**
  * 导入参数
  *
@@ -43,4 +41,4 @@ case class SparkImportArguments(name: String,
                                 hiveEnableDynamicPartition: Boolean = false,
                                 hiveDynamicPartitionKeys: Option[String] = None)
 
-case class SparkOutputArguments()
+case class SparkExportArguments()

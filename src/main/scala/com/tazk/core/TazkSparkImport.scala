@@ -14,7 +14,7 @@ import org.apache.spark.sql.SparkSession
  * @version 1.0, 2020/05/24
  *
  */
-object TazkSparkImport extends TazkImport with Logging {
+object TazkSparkImport extends TazkSparkCore with Logging {
 
 
   lazy private val sparkMongo = (spark: SparkSession, arguments: SparkImportArguments) => new SparkMongoSource(spark,
@@ -60,19 +60,6 @@ object TazkSparkImport extends TazkImport with Logging {
     log.info(s"导入完成，共导入${writeCount}条数据")
 
     spark.stop
-  }
-
-
-  /**
-   * 创建SparkSession
-   */
-  private def getOrCreateSparkSession(arguments: SparkImportArguments): SparkSession = {
-    val spark = SparkSession.builder()
-      .appName(arguments.name)
-      .enableHiveSupport()
-      .getOrCreate()
-    spark.sparkContext.setLogLevel("WARN")
-    spark
   }
 
 

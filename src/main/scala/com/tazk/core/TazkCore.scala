@@ -6,10 +6,10 @@ package com.tazk.core
  * @version 1.0, 2020/05/24
  *
  */
-trait TazkImport {
+trait TazkCore {
 
   /**
-   * 开始导入操作
+   * 导入导出操作
    */
   def main(args: Array[String]): Unit
 

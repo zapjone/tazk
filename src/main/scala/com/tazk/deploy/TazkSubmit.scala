@@ -3,7 +3,7 @@ package com.tazk.deploy
 import java.io.PrintStream
 import java.util.concurrent.CountDownLatch
 
-import com.tazk.core.{SparkImportArguments, TazkImportFactory}
+import com.tazk.core.{SparkImportArguments, TazkFactory}
 import com.tazk.internal.Logging
 import com.tazk.util.CommandLineUtils
 import com.tazk.{deploy, _}
@@ -26,12 +26,12 @@ private[deploy] object TazkSubmitAction extends Enumeration {
   val EXPORT: deploy.TazkSubmitAction.Value = Value("export")
 }
 
-private[tazk] object TazkExecutionEngingAction extends Enumeration {
-  type TazkExecutionEngingAction = Value
+private[tazk] object TazkExecutionEngineAction extends Enumeration {
+  type TazkExecutionEngineAction = Value
   /**
    * 使用spark引擎执行
    */
-  val SPARK: deploy.TazkExecutionEngingAction.Value = Value("spark")
+  val SPARK: deploy.TazkExecutionEngineAction.Value = Value("spark")
 }
 
 /**
@@ -96,65 +96,18 @@ object TazkSubmit extends CommandLineUtils with Logging {
     // 输出欢迎信息
     printWelcomeInfo(System.out)
 
-    appArgs.action match {
-      case TazkSubmitAction.IMPORT => importAction(appArgs, uninitLog)
-      case TazkSubmitAction.EXPORT => exportAction(appArgs, uninitLog)
+    submitAction(appArgs, uninitLog)
+  }
+
+  /**
+   * 提交任务进行导出和导出
+   */
+  private def submitAction(appArgs: TazkSubmitArguments, uninitLog: Boolean): Unit = {
+    val submitForEngine = appArgs.action match {
+      case TazkSubmitAction.IMPORT => TazkFactory.importAction(appArgs, appArgs.executionEngine)
+      case TazkSubmitAction.EXPORT => TazkFactory.exportAction(appArgs, appArgs.executionEngine)
     }
+    submitForEngine.runForWait()
   }
-
-  /**
-   * 导入
-   */
-  private def importAction(appArgs: TazkSubmitArguments, uninitLog: Boolean): Unit = {
-    val (className, appInputArgs) = TazkImportFactory.importAction(appArgs, appArgs.executionEngine)
-    // 使用SparkLauncher来启动程序
-    var launcher = new SparkLauncher()
-      .setSparkHome(appArgs.sparkHome)
-      .setMaster(appArgs.sparkMaster)
-      .setDeployMode(appArgs.sparkDeployMode)
-      .setAppName(appArgs.name)
-      .setMainClass(className)
-      .setAppResource(appArgs.jar)
-      .addAppArgs(appInputArgs)
-      .setConf("spark.queue", appArgs.sparkQueue)
-      .setConf("spark.driver.memory", appArgs.sparkDriverMemory)
-      .setConf("spark.driver.cores", appArgs.sparkDriverCores)
-      .setConf("spark.num.executors", appArgs.sparkNumExecutor)
-      .setConf("spark.executor.memory", appArgs.sparkExecutorMemory)
-      .setConf("spark.executor.cores", appArgs.sparkExecutorCores)
-      .setConf("spark.cores.max", appArgs.sparkTotalExecutorCores)
-
-    // 添加spark启动conf信息
-    appArgs.sparkProperties.foreach(entry => {
-      launcher = launcher.setConf(entry._1, entry._2)
-    })
-
-    // 开始启动Spark程序
-    val countDownLatch = new CountDownLatch(1)
-    launcher.setVerbose(true).startApplication(new SparkAppHandle.Listener {
-      override def stateChanged(handle: SparkAppHandle): Unit = {
-        val state = handle.getState
-        if (state.isFinal) {
-          log.info(String.format("[%s]作业执行完成", handle.getAppId))
-          Thread.sleep(3000)
-          countDownLatch.countDown()
-        } else {
-          println(state)
-        }
-      }
-
-      override def infoChanged(handle: SparkAppHandle): Unit = {
-        // nothing
-      }
-    })
-
-    countDownLatch.await()
-  }
-
-  /**
-   * 导出
-   */
-  private def exportAction(appArgs: TazkSubmitArguments, uninitLog: Boolean): Unit = {
-  }
-
+  
 }

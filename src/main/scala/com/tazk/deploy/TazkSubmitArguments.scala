@@ -1,6 +1,6 @@
 package com.tazk.deploy
 
-import com.tazk.deploy.TazkExecutionEngingAction.TazkExecutionEngingAction
+import com.tazk.deploy.TazkExecutionEngineAction.TazkExecutionEngineAction
 import com.tazk.deploy.TazkMongoUpdateModeAction.TazkMongoUpdateModeAction
 import com.tazk.deploy.TazkSubmitAction.TazkSubmitAction
 import com.tazk.launcher.TazkSubmitArgumentsParser
@@ -18,7 +18,7 @@ import scala.collection.mutable.HashMap
 private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, String] = sys.env) extends TazkSubmitArgumentsParser {
 
   var action: TazkSubmitAction = null
-  var executionEngine: TazkExecutionEngingAction = TazkExecutionEngingAction.SPARK
+  var executionEngine: TazkExecutionEngineAction = TazkExecutionEngineAction.SPARK
   var name: String = null
   var verbose: Boolean = false
   var connect: String = null
@@ -109,7 +109,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
   override protected def handle(opt: String, value: String): Boolean = {
     opt match {
       case EXECUTION_ENGINE => value match {
-        case "spark" => executionEngine = TazkExecutionEngingAction.SPARK
+        case "spark" => executionEngine = TazkExecutionEngineAction.SPARK
         case _ => new IllegalArgumentException(s"[$value]当前不支持")
       }
       case NAME => name = value
@@ -291,7 +291,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
     if (null == hiveTable || hiveTable.trim.length <= 0) {
       TazkSubmit.printErrorAndExit("No hive table set; please specify one with --hive-table")
     }
-    if (executionEngine == TazkExecutionEngingAction.SPARK && null == sparkHome) {
+    if (executionEngine == TazkExecutionEngineAction.SPARK && null == sparkHome) {
       throw new IllegalArgumentException("当执行引擎为Spark时，SPARK_HOME必须配置")
     }
     // 根据同步方式验证参数
@@ -307,7 +307,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
   private def validateImportArguments(): Unit = {
     // 按引擎验证参数
     executionEngine match {
-      case TazkExecutionEngingAction.SPARK => validateSparkImportArguments()
+      case TazkExecutionEngineAction.SPARK => validateSparkImportArguments()
     }
   }
 
@@ -317,7 +317,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
   private def validateExportArguments(): Unit = {
     // 按引擎验证参数
     executionEngine match {
-      case TazkExecutionEngingAction.SPARK => validateSparkExportArguments()
+      case TazkExecutionEngineAction.SPARK => validateSparkExportArguments()
     }
   }
 

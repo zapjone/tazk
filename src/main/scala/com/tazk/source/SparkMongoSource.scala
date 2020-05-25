@@ -42,9 +42,9 @@ class SparkMongoSource(spark: SparkSession,
       if (CLUSTER_MODE == deployMode) {
         if (condition.nonEmpty && (null == conditionEncrypt || "base64" != conditionEncrypt)) {
           throw new IllegalArgumentException("当使用yarn集群模式运行时，必须将条件进行加密处理，且当前加密类型只支持base64")
-        } else {
+        } else if (condition.nonEmpty) {
           Some(new String(Base64.decodeBase64(condition.get)))
-        }
+        } else condition
       } else condition
     } else condition
 

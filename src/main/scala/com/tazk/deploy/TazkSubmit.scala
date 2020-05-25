@@ -138,8 +138,6 @@ object TazkSubmit extends CommandLineUtils with Logging {
           log.info(String.format("[%s]作业执行完成", handle.getAppId))
           Thread.sleep(3000)
           countDownLatch.countDown()
-        } else {
-          println(state)
         }
       }
 

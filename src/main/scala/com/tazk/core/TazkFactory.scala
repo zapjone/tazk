@@ -1,7 +1,8 @@
 package com.tazk.core
 
 import com.tazk.deploy.TazkExecutionEngineAction.TazkExecutionEngineAction
-import com.tazk.deploy.{TazkDepolyJob, TazkExecutionEngineAction, TazkSparkDepoly, TazkSubmitArguments}
+import com.tazk.deploy.TazkMongoUpdateModeAction.TazkMongoUpdateModeAction
+import com.tazk.deploy.{TazkDepolyJob, TazkExecutionEngineAction, TazkMongoUpdateModeAction, TazkSparkDepoly, TazkSubmitArguments}
 import com.tazk.util.Utils
 import org.apache.commons.codec.binary.Base64
 
@@ -36,7 +37,10 @@ private[tazk] object TazkFactory {
      * 构建导出参数信息
      */
     def sparkExportArgs(tazkArgs: TazkSubmitArguments): SparkExportArguments = {
-      SparkExportArguments()
+      SparkExportArguments(tazkArgs.name, tazkArgs.connect, tazkArgs.mongoDatabase, tazkArgs.mongoCollection,
+        tazkArgs.username, tazkArgs.password, tazkArgs.mongoCamelConvert, tazkArgs.mongoUpdateMode,
+        Option(tazkArgs.mongoUpdateKey), Option(tazkArgs.mongoIgnoreUpdateKey), Option(tazkArgs.mongoexternalProperties),
+        tazkArgs.hiveDatabase, tazkArgs.hiveTable, Option(tazkArgs.hiveExportCondition))
     }
 
   }
@@ -49,9 +53,8 @@ private[tazk] object TazkFactory {
                    engine: TazkExecutionEngineAction): TazkDepolyJob = engine match {
     case TazkExecutionEngineAction.SPARK =>
       // 将参数进行格式化后传入到程序中
-      val importArgs = Utils.toJSON[SparkImportArguments](ImportArgs.sparkImportArgs(tazkArgs))
-      new TazkSparkDepoly(TazkSparkImport.getClass.getName,
-        Base64.encodeBase64String(importArgs.getBytes()), tazkArgs)
+      val importArgs = Utils.toJSON(ImportArgs.sparkImportArgs(tazkArgs))
+      new TazkSparkDepoly(TazkSparkImport.getClass.getName, Base64.encodeBase64String(importArgs.getBytes()), tazkArgs)
 
     case _ => throw new IllegalArgumentException("不支持的导入执行引擎")
   }
@@ -62,9 +65,8 @@ private[tazk] object TazkFactory {
   def exportAction(tazkArgs: TazkSubmitArguments,
                    engine: TazkExecutionEngineAction): TazkDepolyJob = engine match {
     case TazkExecutionEngineAction.SPARK =>
-      val exportArgs = Utils.toJSON[SparkExportArguments](ExportArgs.sparkExportArgs(tazkArgs))
-      new TazkSparkDepoly(TazkSparkExport.getClass.getName,
-        Base64.encodeBase64String(exportArgs.getBytes()), tazkArgs)
+      val exportArgs = Utils.toJSONWithEnum(ExportArgs.sparkExportArgs(tazkArgs), TazkMongoUpdateModeAction)
+      new TazkSparkDepoly(TazkSparkExport.getClass.getName, Base64.encodeBase64String(exportArgs.getBytes()), tazkArgs)
     case _ => throw new IllegalArgumentException("不支持的导出执行引擎")
   }
 

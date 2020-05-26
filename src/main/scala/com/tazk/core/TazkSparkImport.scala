@@ -43,16 +43,13 @@ object TazkSparkImport extends TazkSparkCore with Logging {
    * 开始导入操作
    */
   override def main(args: Array[String]): Unit = {
-    if (null == args || args.length <= 0) {
-      throw new IllegalArgumentException("参数不能为空")
-    }
+
     // 解析传递过来参数
-    val arguments = Utils.parseObject[SparkImportArguments](new String(Base64.decodeBase64(args(0))),
-      classOf[SparkImportArguments])
+    val arguments = Utils.parseObject[SparkImportArguments](checkInputArgs(args))
 
 
     // 创建SparkSession
-    val spark = getOrCreateSparkSession(arguments)
+    val spark = getOrCreateSparkSession(arguments.name)
 
     log.info("开始读取hive数据并转换成dataset")
     val mongoDS = sparkMongo(spark, arguments).read()

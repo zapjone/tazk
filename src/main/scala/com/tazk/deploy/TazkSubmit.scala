@@ -37,7 +37,7 @@ private[tazk] object TazkExecutionEngineAction extends Enumeration {
 /**
  * mongo更新模式
  */
-private[deploy] object TazkMongoUpdateModeAction extends Enumeration {
+private[tazk] object TazkMongoUpdateModeAction extends Enumeration {
   val allowInsert = "allowInsert"
   val allowUpdate = "allowUpdate"
   val allowDelete = "allDelete"
@@ -109,5 +109,5 @@ object TazkSubmit extends CommandLineUtils with Logging {
     }
     submitForEngine.runForWait()
   }
-  
+
 }

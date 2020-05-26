@@ -44,7 +44,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
   var mongoImportConditionEncrypt: String = "base64"
   var mongoUpdateKey: String = null
   var mongoIgnoreUpdateKey: String = null
-  var mongoUpdateMode: TazkMongoUpdateModeAction = null
+  var mongoUpdateMode: TazkMongoUpdateModeAction = TazkMongoUpdateModeAction.ALLOW_INSERT
   var mongoCamelConvert: Boolean = true
   var hiveDatabase: String = "default"
   var hiveTable: String = null
@@ -55,6 +55,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
   var hivePartitionValue: String = null
   var hiveEnableDynamic: Boolean = false
   var hiveDynamicPartitionKey: String = null
+  var hiveExportCondition: String = null
 
   // Set parameters from command line arguments
   loadEnvironmentInfo()
@@ -140,7 +141,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
       case MONGO_IMPORT_CONDITION_ENCRYPT_TYPE => mongoImportConditionEncrypt = value
       case MONGO_UPDATE_KEY => mongoUpdateKey = value
       case MONGO_IGNORE_UPDATE_KEY => mongoIgnoreUpdateKey = value
-      case MONGO_UPDATE_MODE => value match {
+      case MONGO_UPDATE_MODE => mongoUpdateMode = value match {
         case TazkMongoUpdateModeAction.allowInsert => TazkMongoUpdateModeAction.ALLOW_INSERT
         case TazkMongoUpdateModeAction.allowUpdate => TazkMongoUpdateModeAction.ALLOW_UPDATE
         case TazkMongoUpdateModeAction.allowDelete => TazkMongoUpdateModeAction.ALLOW_DELETE
@@ -156,6 +157,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
       case HIVE_PARTITION_VALUE => hivePartitionValue = value
       case HIVE_ENABLE_DYNAMIC => hiveEnableDynamic = value.toBoolean
       case HIVE_DYNAMIC_PARTITION_KEY => hiveDynamicPartitionKey = value
+      case HIVE_EXPORT_CONDITION => hiveExportCondition = value
 
       case VERBOSE => verbose = true
       case VERSION => TazkSubmit.printVersionAndExit()

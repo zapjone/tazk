@@ -64,6 +64,7 @@ public class TazkSubmitOptionParser {
     protected final String HIVE_PARTITION_VALUE = "--hive-partition-value";
     protected final String HIVE_ENABLE_DYNAMIC = "--hive-enable-dynamic";
     protected final String HIVE_DYNAMIC_PARTITION_KEY = "--hive-dynamic-partition-key";
+    protected final String HIVE_EXPORT_CONDITION = "--hive-export-condition";
 
 
     /**
@@ -110,6 +111,7 @@ public class TazkSubmitOptionParser {
             {HIVE_PARTITION_VALUE},
             {HIVE_ENABLE_DYNAMIC},
             {HIVE_DYNAMIC_PARTITION_KEY},
+            {HIVE_EXPORT_CONDITION},
     };
 
     final String[][] switches = {

@@ -1,5 +1,9 @@
 package com.tazk.core
 
+import com.tazk.deploy.TazkMongoUpdateModeAction.TazkMongoUpdateModeAction
+
+import scala.collection.mutable
+
 /**
  * 导入参数
  *
@@ -41,4 +45,34 @@ case class SparkImportArguments(name: String,
                                 hiveEnableDynamicPartition: Boolean = false,
                                 hiveDynamicPartitionKeys: Option[String] = None)
 
-case class SparkExportArguments()
+/**
+ *
+ * @param name                 Spark程序启动名称
+ * @param mongoUri             mongo连接地址
+ * @param mongoDatabase        mongo数据库
+ * @param mongoCollection      mongo集合名称
+ * @param mongoUserName        mongo用户名
+ * @param mongoPassword        mongo密码
+ * @param mongoCamelConvert    是否将hive的字段转换成mongo的驼峰命名
+ * @param mongoUpdateMode      mongo更新模式：allowInsert,allowUpdte,allowDelete
+ * @param mongoUpdateKey       mongo更新的key
+ * @param mongoIgnoreUpdateKey mongo忽略更新的key
+ * @param mongoOtherConf       mongo其他配置
+ * @param hiveDatabase         hive数据库
+ * @param hiveTable            hive表名
+ * @param hiveCondition        hive导出的条件，限制导出的数据
+ */
+case class SparkExportArguments(name: String,
+                                mongoUri: String,
+                                mongoDatabase: String,
+                                mongoCollection: String,
+                                mongoUserName: String,
+                                mongoPassword: String,
+                                mongoCamelConvert: Boolean = true,
+                                mongoUpdateMode: TazkMongoUpdateModeAction,
+                                mongoUpdateKey: Option[String],
+                                mongoIgnoreUpdateKey: Option[String],
+                                mongoOtherConf: Option[mutable.HashMap[String, String]] = None,
+                                hiveDatabase: String = "default",
+                                hiveTable: String,
+                                hiveCondition: Option[String])

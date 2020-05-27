@@ -40,7 +40,7 @@ case class SparkImportArguments(name: String,
                                 hiveDatabase: String = "default",
                                 hiveFormat: String = "text",
                                 mongoCamelConvert: Boolean = true,
-                                mongoOtherConf: Map[String, String] = Map(),
+                                mongoOtherConf: Option[Map[String, String]] = None,
                                 hiveDeleteTableIfExists: Boolean = false,
                                 hiveEnableDynamicPartition: Boolean = false,
                                 hiveDynamicPartitionKeys: Option[String] = None)

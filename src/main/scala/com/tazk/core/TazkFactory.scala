@@ -25,7 +25,7 @@ private[tazk] object TazkFactory {
         tazkArgs.username, tazkArgs.password, Option(tazkArgs.mongoImportCondition),
         tazkArgs.mongoImportConditionEncrypt, tazkArgs.hiveTable, tazkArgs.hivePartitionKey,
         tazkArgs.hivePartitionValue, tazkArgs.hiveDatabase, tazkArgs.hiveFormat,
-        tazkArgs.mongoCamelConvert, tazkArgs.mongoexternalProperties.toMap, tazkArgs.hiveDeleteTableIfExists,
+        tazkArgs.mongoCamelConvert, Option(tazkArgs.mongoexternalProperties.toMap), tazkArgs.hiveDeleteTableIfExists,
         tazkArgs.hiveEnableDynamic, Option(tazkArgs.hiveDynamicPartitionKey))
     }
 

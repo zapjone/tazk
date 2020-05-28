@@ -60,18 +60,26 @@ class SparkMongoSource(spark: SparkSession,
 
     // 读取mongo数据，如果有查询条件，则进行条件查询
     val mongoRDD = MongoSpark.load(spark.sparkContext, mongoConfig)
-    val mongoDS = if (realMongoCondition.nonEmpty) {
+    if (realMongoCondition.nonEmpty) {
       mongoRDD.withPipeline(Seq(Document.parse(realMongoCondition.get)))
-        .mapPartitions(_.map(_.toJson())).toDS
-    } else mongoRDD.mapPartitions(_.map(_.toJson())).toDS()
+        .mapPartitions(_.map(content2JSON)).toDS
+    } else mongoRDD.mapPartitions(_.map(content2JSON)).toDS()
 
+  }
+
+  /**
+   * 将document中的列名驼峰命名转换成下划线
+   */
+  private def content2JSON(document: Document): String = {
+    import scala.collection.JavaConverters._
     if (camelConvert) {
-      mongoDS.columns.foreach(colName => {
-        mongoDS.withColumnRenamed(colName, Utils.hump2Line(colName))
-      })
-      mongoDS
-    } else mongoDS
-
+      val multiSet = for (entry <- document.keySet().asScala) yield {
+        Utils.hump2Line(entry) -> document.get(entry)
+      }
+      Utils.toJSON(multiSet.toMap)
+    } else {
+      document.toJson()
+    }
   }
 
 }

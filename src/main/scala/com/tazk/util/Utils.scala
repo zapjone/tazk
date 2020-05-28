@@ -5,9 +5,8 @@ import java.util.regex.Pattern
 
 import com.tazk.internal.Logging
 import org.json4s.ext.EnumNameSerializer
-import org.json4s.jackson.JsonMethods.{compact, render}
+import org.json4s.jackson.JsonMethods.{compact, render, _}
 import org.json4s.{DefaultFormats, Extraction, Formats}
-import org.json4s.jackson.JsonMethods._
 
 import scala.reflect.ClassTag
 

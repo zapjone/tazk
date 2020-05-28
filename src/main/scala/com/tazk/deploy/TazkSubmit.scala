@@ -1,13 +1,11 @@
 package com.tazk.deploy
 
 import java.io.PrintStream
-import java.util.concurrent.CountDownLatch
 
-import com.tazk.core.{SparkImportArguments, TazkFactory}
+import com.tazk.core.TazkFactory
 import com.tazk.internal.Logging
 import com.tazk.util.CommandLineUtils
 import com.tazk.{deploy, _}
-import org.apache.spark.launcher.{SparkAppHandle, SparkLauncher}
 
 import scala.util.Properties
 

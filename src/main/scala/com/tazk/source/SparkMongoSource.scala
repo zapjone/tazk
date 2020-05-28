@@ -24,7 +24,7 @@ class SparkMongoSource(spark: SparkSession,
                        condition: Option[String],
                        conditionEncrypt: String,
                        camelConvert: Boolean = true,
-                       otherConf: Map[String, String] = Map()) extends TazkSource[Dataset[String]] {
+                       otherConf: Option[Map[String, String]] = None) extends TazkSource[Dataset[String]] {
 
   private val YARN_MASTER = "yarn"
   private val CLUSTER_MODE = "cluster"
@@ -47,12 +47,14 @@ class SparkMongoSource(spark: SparkSession,
       } else condition
     } else condition
 
+
     // mongo参数配置
+    val mongoOtherConfMap = if (otherConf.nonEmpty) otherConf.get else Map()
     val mongoConfig = ReadConfig(Map(
       "uri" -> Utils.buildMongoUri(uri, userName, password),
       "database" -> database,
       "collection" -> collection
-    ) ++ otherConf)
+    ) ++ mongoOtherConfMap)
 
     import spark.implicits._
 

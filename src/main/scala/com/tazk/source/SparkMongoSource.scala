@@ -2,6 +2,7 @@ package com.tazk.source
 
 import com.mongodb.spark.MongoSpark
 import com.mongodb.spark.config.ReadConfig
+import com.tazk.util.Utils
 import org.apache.commons.codec.binary.Base64
 import org.apache.spark.sql.{Dataset, SparkSession}
 import org.bson.Document
@@ -48,7 +49,7 @@ class SparkMongoSource(spark: SparkSession,
 
     // mongo参数配置
     val mongoConfig = ReadConfig(Map(
-      "uri" -> appenduri(),
+      "uri" -> Utils.buildMongoUri(uri, userName, password),
       "database" -> database,
       "collection" -> collection
     ) ++ otherConf)
@@ -64,46 +65,11 @@ class SparkMongoSource(spark: SparkSession,
 
     if (camelConvert) {
       mongoDS.columns.foreach(colName => {
-        mongoDS.withColumnRenamed(colName, camelConvertFun(colName))
+        mongoDS.withColumnRenamed(colName, Utils.hump2Line(colName))
       })
       mongoDS
     } else mongoDS
 
-  }
-
-  /**
-   * 进行驼峰命名转换
-   *
-   * @param colName 旧的驼峰名字
-   * @return 新的以下划线划分的名字
-   */
-  private def camelConvertFun(colName: String): String = {
-    colName.toCharArray.map(ch => {
-      if (ch >= 'A' && ch <= 'Z') s"_$ch".toLowerCase
-      else s"$ch"
-    }).mkString("")
-  }
-
-
-  /**
-   * 拼接mongo地址
-   */
-  private def appenduri(): String = {
-    val mongoPrefix = "mongodb://"
-    if (uri.startsWith(mongoPrefix)) {
-      // 是否包含用户名和密码
-      val withUser = if (null != userName && !uri.contains(userName)) {
-        val hostIndex = uri.indexOf("@")
-        val index = if (-1 == hostIndex) uri.indexOf("//") + 1 else hostIndex + 1
-        s"$mongoPrefix$userName@${uri.substring(index + 1)}"
-      } else uri
-      if (null != password && !uri.contains(password)) {
-        val index = withUser.indexOf("@")
-        val prefix = withUser.substring(0, index)
-        val suffix = withUser.substring(index)
-        s"$prefix:$password$suffix"
-      } else withUser
-    } else s"$mongoPrefix$userName${if (null != password) s":$password" else ""}@$uri"
   }
 
 }

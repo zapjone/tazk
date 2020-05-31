@@ -17,7 +17,7 @@ class SparkHiveSink(spark: SparkSession,
                     format: String = "text",
                     deleteTableIfExists: Boolean = false,
                     enableDynamicPartition: Boolean = false,
-                    dynamicPartitionKeys: Option[String] = None) extends TazkSink[Dataset[String]] {
+                    dynamicPartitionKeys: Option[String] = None) extends TazkSink[Dataset[String], Long] {
 
   /**
    * 写入目标库

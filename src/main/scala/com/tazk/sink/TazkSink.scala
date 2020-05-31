@@ -8,14 +8,14 @@ package com.tazk.sink
  * @version 1.0, 2020/05/23
  *
  */
-trait TazkSink[T] {
+trait TazkSink[T, R] {
 
 
   /**
    * 写入目标库
    *
-   * @return 返回写入成功条数
+   * @return 返回到信息，一般返回其条数
    */
-  def write(t: T): Long
+  def write(t: T): R
 
 }

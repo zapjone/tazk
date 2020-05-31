@@ -2,6 +2,7 @@ package com.tazk.source
 
 import com.mongodb.spark.MongoSpark
 import com.mongodb.spark.config.ReadConfig
+import com.tazk.common.TazkCommon
 import com.tazk.util.Utils
 import org.apache.commons.codec.binary.Base64
 import org.apache.spark.sql.{Dataset, SparkSession}
@@ -24,7 +25,8 @@ class SparkMongoSource(spark: SparkSession,
                        condition: Option[String],
                        conditionEncrypt: String,
                        camelConvert: Boolean = true,
-                       otherConf: Option[Map[String, String]] = None) extends TazkSource[Dataset[String]] {
+                       otherConf: Option[Map[String, String]] = None)
+  extends TazkSource[Dataset[String]] with TazkCommon {
 
   private val YARN_MASTER = "yarn"
   private val CLUSTER_MODE = "cluster"
@@ -68,18 +70,7 @@ class SparkMongoSource(spark: SparkSession,
   }
 
   /**
-   * 将document中的列名驼峰命名转换成下划线
+   * 是否进行转换
    */
-  private def content2JSON(document: Document): String = {
-    import scala.collection.JavaConverters._
-    if (camelConvert) {
-      val multiSet = for (entry <- document.keySet().asScala) yield {
-        Utils.hump2Line(entry) -> document.get(entry)
-      }
-      Utils.toJSON(multiSet.toMap)
-    } else {
-      document.toJson()
-    }
-  }
-
+  override val camelConvertBool: Boolean = camelConvertBool
 }

@@ -128,4 +128,25 @@ private[tazk] object Utils extends Logging {
     buffer.toString
   }
 
+  /**
+   * 查找出需要的字段信息
+   *
+   * @param curCol    当前列名称
+   * @param hisCol    历史列名称
+   * @param cur       当前别名
+   * @param his       历史别名
+   * @param ignoreKey 忽略的key
+   * @return 需要查询的key
+   */
+  def findColNams(curCol: Array[String], hisCol: Array[String], cur: String, his: String, ignoreKey: String): Array[String] = {
+    val ignoreArr = ignoreKey.split(",")
+    if (ignoreArr.size <= 0) curCol.map(c => s"$cur.$c")
+    else {
+      curCol.map { colName =>
+        if (ignoreArr.contains(colName) && hisCol.contains(colName)) s"$his.$colName"
+        else s"$cur.$colName"
+      }
+    }
+  }
+
 }

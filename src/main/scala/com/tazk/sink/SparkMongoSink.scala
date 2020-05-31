@@ -78,16 +78,16 @@ class SparkMongoSink(spark: SparkSession,
       } else dataset.columns
 
       if (rowPartition.nonEmpty) {
+        // 将Row转换成Document后，再进行批量插入
         mongoConnector.withCollectionDo(writeConfig, { collection: MongoCollection[Document] =>
-          rowPartition.foreach(row => {
-            // 遍历row并转换成Document
+          val docList = rowPartition.map(row => {
             val valMap: JMap[String, JObject] = (for (index <- 0 until row.size) yield {
               colNames(index) -> row.get(index).asInstanceOf[JObject]
             }).toMap.asJava
-            val doc = new Document(valMap)
-            collection.insertOne(doc)
-            insertMongoCount.add(1)
-          })
+            new Document(valMap)
+          }).toList.asJava
+          collection.insertMany(docList)
+          insertMongoCount.add(docList.size())
         })
       }
     })

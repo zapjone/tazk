@@ -296,6 +296,9 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
     if (executionEngine == TazkExecutionEngineAction.SPARK && null == sparkHome) {
       throw new IllegalArgumentException("当执行引擎为Spark时，SPARK_HOME必须配置")
     }
+    if (null == name) {
+      name = s"${mongoDatabase}_$mongoCollection"
+    }
     // 根据同步方式验证参数
     action match {
       case TazkSubmitAction.IMPORT => validateImportArguments()
@@ -344,8 +347,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
       case "yarn" if ("cluster" == sparkDeployMode && null != mongoImportCondition
         && (null == mongoImportConditionEncrypt || "base64" != mongoImportConditionEncrypt)) =>
         throw new IllegalArgumentException("Spark提交模式为yarn时，进行条件导入，需要将条件信息进行加密，如base64加密")
-      case "local" =>
-      case _ => throw new IllegalArgumentException(String.format("[%s]不支持，spark的master只支持yarn/local", sparkMaster))
+      case _ =>
     }
   }
 

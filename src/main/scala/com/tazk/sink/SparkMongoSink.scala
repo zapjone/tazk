@@ -4,7 +4,7 @@ import java.lang.{Object => JObject}
 import java.util.{List => JList, Map => JMap}
 
 import com.mongodb.client.MongoCollection
-import com.mongodb.client.model.{DeleteOneModel, Filters, UpdateOneModel, UpdateOptions}
+import com.mongodb.client.model.{DeleteOneModel, Filters, UpdateOneModel, UpdateOptions, WriteModel}
 import com.mongodb.spark.config.{ReadConfig, WriteConfig}
 import com.mongodb.spark.{MongoConnector, MongoSpark}
 import com.tazk.common.TazkCommon
@@ -17,6 +17,7 @@ import org.bson.Document
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.reflect.ClassTag
 
 /**
  *
@@ -97,7 +98,7 @@ class SparkMongoSink(spark: SparkSession,
       .selectExpr(hisCols.map(c => s"$deleteAlias.$c"): _*)
 
     // 批量删除
-    operateMongo[DeleteOneModel[Document]](deleteData, writeConfig, deleteCount, (collection, docList) => {
+    operateMongo[Document](deleteData, writeConfig, deleteCount, (collection, docList) => {
       val delete = docList.asScala.map { doc =>
         new DeleteOneModel[Document](Filters.eq(s"$updateKey", doc.get(updateKey)))
       }
@@ -135,7 +136,7 @@ class SparkMongoSink(spark: SparkSession,
       .selectExpr(Utils.findColNams(curCols, hisCols, "cur_ds", updateAlias,
         ignoreUpdateKey.getOrElse("") ++ s"$updateAlias._id"): _*)
     // 批量更新
-    operateMongo[UpdateOneModel[Document]](updateData, writeConfig, updateMongoCount, (collection, docList) => {
+    operateMongo[Document](updateData, writeConfig, updateMongoCount, (collection, docList) => {
       val upsert = docList.asScala.map { doc =>
         val modifiers = new Document()
         modifiers.put("$set", doc)
@@ -169,8 +170,8 @@ class SparkMongoSink(spark: SparkSession,
    * @param longAccumulator 计数器
    * @param intoMongoFun    进入mongo的方式，insert或者update
    */
-  private def operateMongo[D](dataset: Dataset[Row], writeConfig: WriteConfig,
-                              longAccumulator: LongAccumulator, intoMongoFun: (MongoCollection[D], JList[Document]) => Unit): Unit = {
+  private def operateMongo[D: ClassTag](dataset: Dataset[Row], writeConfig: WriteConfig,
+                                        longAccumulator: LongAccumulator, intoMongoFun: (MongoCollection[D], JList[Document]) => Unit): Unit = {
     dataset.foreachPartition(rowPartition => {
       // 创建Mongoecotr
       val mongoConnector = MongoConnector(writeConfig.asOptions)

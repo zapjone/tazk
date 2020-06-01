@@ -13,8 +13,8 @@ import org.apache.spark.launcher.{SparkAppHandle, SparkLauncher}
  *
  */
 private[tazk] class TazkSparkDepoly(clazz: String,
-                                      appInputArgs: String,
-                                      appArgs: TazkSubmitArguments) extends TazkDepolyJob with Logging {
+                                    appInputArgs: String,
+                                    appArgs: TazkSubmitArguments) extends TazkDepolyJob with Logging {
   /**
    * 提交任务
    */
@@ -34,7 +34,23 @@ private[tazk] class TazkSparkDepoly(clazz: String,
       .setConf("spark.num.executors", appArgs.sparkNumExecutor)
       .setConf("spark.executor.memory", appArgs.sparkExecutorMemory)
       .setConf("spark.executor.cores", appArgs.sparkExecutorCores)
-      .setConf("spark.cores.max", appArgs.sparkTotalExecutorCores)
+
+    println(appArgs.sparkHome)
+    println(appArgs.sparkMaster)
+    println(appArgs.sparkDeployMode)
+    println(appArgs.name)
+    println(clazz)
+    println(appArgs.jar)
+    println(appInputArgs)
+    println(appArgs.sparkQueue)
+    println(appArgs.sparkDriverMemory)
+    println(appArgs.sparkDriverCores)
+    println(appArgs.sparkExecutorMemory)
+    println(appArgs.sparkExecutorCores)
+
+    if (null != appArgs.sparkTotalExecutorCores) {
+      launcher = launcher.setConf("spark.cores.max", appArgs.sparkTotalExecutorCores)
+    }
 
     // 添加spark启动conf信息
     appArgs.sparkProperties.foreach(entry => {
@@ -47,6 +63,7 @@ private[tazk] class TazkSparkDepoly(clazz: String,
       override def stateChanged(handle: SparkAppHandle): Unit = {
         val state = handle.getState
         if (state.isFinal) {
+          println(String.format("[%s]作业执行完成", handle.getAppId))
           log.info(String.format("[%s]作业执行完成", handle.getAppId))
           Thread.sleep(3000)
           countDownLatch.countDown()

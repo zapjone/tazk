@@ -54,7 +54,7 @@ private[tazk] object TazkFactory {
     case TazkExecutionEngineAction.SPARK =>
       // 将参数进行格式化后传入到程序中
       val importArgs = Utils.toJSON(ImportArgs.sparkImportArgs(tazkArgs))
-      new TazkSparkDepoly(TazkSparkImport.getClass.getName, Base64.encodeBase64String(importArgs.getBytes()), tazkArgs)
+      new TazkSparkDepoly("com.tazk.core.TazkSparkImport", Base64.encodeBase64String(importArgs.getBytes()), tazkArgs)
 
     case _ => throw new IllegalArgumentException("不支持的导入执行引擎")
   }
@@ -66,7 +66,7 @@ private[tazk] object TazkFactory {
                    engine: TazkExecutionEngineAction): TazkDepolyJob = engine match {
     case TazkExecutionEngineAction.SPARK =>
       val exportArgs = Utils.toJSONWithEnum(ExportArgs.sparkExportArgs(tazkArgs), TazkMongoUpdateModeAction)
-      new TazkSparkDepoly(TazkSparkExport.getClass.getName, Base64.encodeBase64String(exportArgs.getBytes()), tazkArgs)
+      new TazkSparkDepoly("com.tazk.core.TazkSparkExport", Base64.encodeBase64String(exportArgs.getBytes()), tazkArgs)
     case _ => throw new IllegalArgumentException("不支持的导出执行引擎")
   }
 

@@ -83,7 +83,7 @@ object TazkSubmit extends CommandLineUtils with Logging {
 
   override def main(args: Array[String]): Unit = {
 
-    val uninitLog = initializeLogIfNecessary(isInterpreter = true, silent = true)
+    val uninitLog = initializeLogIfNecessary(false)
 
     // 解析输入参数
     val appArgs = new TazkSubmitArguments(args.toList)

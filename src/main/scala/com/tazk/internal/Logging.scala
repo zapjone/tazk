@@ -78,7 +78,7 @@ trait Logging {
     log.isTraceEnabled
   }
 
-  protected def initializeLogIfNecessary(isInterpreter: Boolean): Unit = {
+  protected def initializeLogIfNecessary(isInterpreter: Boolean): Boolean = {
     initializeLogIfNecessary(isInterpreter, silent = false)
   }
 

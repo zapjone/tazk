@@ -53,6 +53,7 @@ class SparkMongoSource(spark: SparkSession,
     // mongo参数配置
     val mongoOtherConfMap = if (otherConf.nonEmpty) otherConf.get else Map()
     val mongoConfig = ReadConfig(Map(
+      "readPreference.name" -> "primaryPreferred",
       "uri" -> Utils.buildMongoUri(uri, userName, password),
       "database" -> database,
       "collection" -> collection

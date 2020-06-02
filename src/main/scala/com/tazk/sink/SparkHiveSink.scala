@@ -31,17 +31,13 @@ class SparkHiveSink(spark: SparkSession,
       }
     }
 
-    import spark.implicits._
     // 检查目标表是否存在
-    spark.catalog.setCurrentDatabase(database)
-    val listTables = spark.catalog.listTables(database)
-    if (listTables.mapPartitions(iter => iter.map(_.name == table))
-      .filter(x => x).collect().length > 0) {
+    if (spark.catalog.tableExists(database, table)) {
       if (!deleteTableIfExists) {
         throw new IllegalArgumentException(String.format("[%s]目标表存在", table))
       } else {
         // 删除目标表
-        spark.sql(s"drop table $table")
+        spark.sql(s"drop table $database.$table")
       }
     }
 

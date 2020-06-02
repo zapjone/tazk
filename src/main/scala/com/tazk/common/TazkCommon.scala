@@ -24,7 +24,7 @@ trait TazkCommon {
       val multiSet = for (entry <- document.keySet().asScala) yield {
         Utils.hump2Line(entry) -> document.get(entry)
       }
-      Utils.toJSON(multiSet.toMap)
+      Utils.toJSON[Map[String, AnyRef]](multiSet.toMap)
     } else {
       document.toJson()
     }

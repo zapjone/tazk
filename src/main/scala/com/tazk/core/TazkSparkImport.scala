@@ -4,7 +4,6 @@ import com.tazk.internal.Logging
 import com.tazk.sink.SparkHiveSink
 import com.tazk.source.SparkMongoSource
 import com.tazk.util.Utils
-import org.apache.commons.codec.binary.Base64
 import org.apache.spark.sql.SparkSession
 
 /**

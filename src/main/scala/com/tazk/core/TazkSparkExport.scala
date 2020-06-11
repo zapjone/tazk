@@ -31,7 +31,7 @@ object TazkSparkExport extends TazkSparkCore with Logging {
     arguments.mongoUserName,
     arguments.mongoPassword,
     arguments.mongoOtherConf.getOrElse(mutable.HashMap()),
-    arguments.mongoUpdateMode,
+    TazkMongoUpdateModeAction.findOf(arguments.mongoUpdateMode),
     arguments.mongoUpdateKey,
     arguments.mongoIgnoreUpdateKey,
     arguments.mongoCamelConvert)
@@ -41,8 +41,7 @@ object TazkSparkExport extends TazkSparkCore with Logging {
    */
   override def main(args: Array[String]): Unit = {
     // 解析传递过来参数
-    val arguments = Utils.parseObjectWithEnum[SparkExportArguments](checkInputArgs(args),
-      TazkMongoUpdateModeAction)
+    val arguments = Utils.parseObject[SparkExportArguments](checkInputArgs(args))
     val spark = getOrCreateSparkSession(arguments.name)
 
     log.info("开始读取hive数据，准备写入到mongo")

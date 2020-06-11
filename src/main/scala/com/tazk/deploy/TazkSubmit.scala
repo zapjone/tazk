@@ -43,6 +43,17 @@ private[tazk] object TazkMongoUpdateModeAction extends Enumeration {
   val ALLOW_INSERT: deploy.TazkMongoUpdateModeAction.Value = Value(allowInsert)
   val ALLOW_UPDATE: deploy.TazkMongoUpdateModeAction.Value = Value(allowUpdate)
   val ALLOW_DELETE: deploy.TazkMongoUpdateModeAction.Value = Value(allowDelete)
+
+  /**
+   * 以字符串查找更新模式
+   */
+  def findOf(mode: String): TazkMongoUpdateModeAction = mode match {
+    case TazkMongoUpdateModeAction.allowInsert => ALLOW_INSERT
+    case TazkMongoUpdateModeAction.allowUpdate => ALLOW_UPDATE
+    case TazkMongoUpdateModeAction.allowDelete => ALLOW_DELETE
+    case _ => throw new RuntimeException(s"未知的[$mode]导出模式")
+  }
+
 }
 
 

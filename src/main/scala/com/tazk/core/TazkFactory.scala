@@ -1,8 +1,7 @@
 package com.tazk.core
 
 import com.tazk.deploy.TazkExecutionEngineAction.TazkExecutionEngineAction
-import com.tazk.deploy.TazkMongoUpdateModeAction.TazkMongoUpdateModeAction
-import com.tazk.deploy.{TazkDepolyJob, TazkExecutionEngineAction, TazkMongoUpdateModeAction, TazkSparkDepoly, TazkSubmitArguments}
+import com.tazk.deploy.{TazkDepolyJob, TazkExecutionEngineAction, TazkSparkDepoly, TazkSubmitArguments}
 import com.tazk.util.Utils
 import org.apache.commons.codec.binary.Base64
 
@@ -66,7 +65,7 @@ private[tazk] object TazkFactory {
   def exportAction(tazkArgs: TazkSubmitArguments,
                    engine: TazkExecutionEngineAction): TazkDepolyJob = engine match {
     case TazkExecutionEngineAction.SPARK =>
-      val exportArgs = Utils.toJSONWithEnum(ExportArgs.sparkExportArgs(tazkArgs), TazkMongoUpdateModeAction)
+      val exportArgs = Utils.toJSON(ExportArgs.sparkExportArgs(tazkArgs))
       new TazkSparkDepoly("com.tazk.core.TazkSparkExport", Base64.encodeBase64String(exportArgs.getBytes()), tazkArgs)
     case _ => throw new IllegalArgumentException("不支持的导出执行引擎")
   }

@@ -45,7 +45,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
   var mongoImportConditionEncrypt: String = "base64"
   var mongoUpdateKey: String = null
   var mongoIgnoreUpdateKey: String = null
-  var mongoUpdateMode: TazkMongoUpdateModeAction = TazkMongoUpdateModeAction.ALLOW_INSERT
+  var mongoUpdateMode: String = TazkMongoUpdateModeAction.allowInsert
   var mongoCamelConvert: Boolean = true
   var hiveDatabase: String = "default"
   var hiveTable: String = null
@@ -144,12 +144,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
       case MONGO_IMPORT_CONDITION_ENCRYPT_TYPE => mongoImportConditionEncrypt = value
       case MONGO_UPDATE_KEY => mongoUpdateKey = value
       case MONGO_IGNORE_UPDATE_KEY => mongoIgnoreUpdateKey = value
-      case MONGO_UPDATE_MODE => mongoUpdateMode = value match {
-        case TazkMongoUpdateModeAction.allowInsert => TazkMongoUpdateModeAction.ALLOW_INSERT
-        case TazkMongoUpdateModeAction.allowUpdate => TazkMongoUpdateModeAction.ALLOW_UPDATE
-        case TazkMongoUpdateModeAction.allowDelete => TazkMongoUpdateModeAction.ALLOW_DELETE
-        case _ => throw new IllegalArgumentException(s"[$value]不支持的导出模式")
-      }
+      case MONGO_UPDATE_MODE => mongoUpdateMode = value
       case MONGO_CAMEL_CONVERT => mongoCamelConvert = value.toBoolean
       case HIVE_DATABASE => hiveDatabase = value
       case HIVE_TABLE => hiveTable = value

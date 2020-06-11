@@ -25,6 +25,7 @@ class SparkMongoSource(spark: SparkSession,
                        condition: Option[String],
                        conditionEncrypt: String,
                        camelConvert: Boolean = true,
+                       readPreference: String = "primaryPreferred",
                        otherConf: Option[Map[String, String]] = None)
   extends TazkSource[Dataset[String]] with TazkCommon {
 
@@ -53,7 +54,7 @@ class SparkMongoSource(spark: SparkSession,
     // mongo参数配置
     val mongoOtherConfMap = if (otherConf.nonEmpty) otherConf.get else Map()
     val mongoConfig = ReadConfig(Map(
-      "readPreference.name" -> "primaryPreferred",
+      "readPreference.name" -> readPreference,
       "uri" -> Utils.buildMongoUri(uri, userName, password),
       "database" -> database,
       "collection" -> collection
@@ -73,5 +74,5 @@ class SparkMongoSource(spark: SparkSession,
   /**
    * 是否进行转换
    */
-  override val camelConvertBool: Boolean = camelConvertBool
+  override val camelConvertBool: Boolean = camelConvert
 }

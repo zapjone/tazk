@@ -46,6 +46,7 @@ class SparkHiveSink(spark: SparkSession,
     dataset.foreachPartition(iter => mongoCount.add(iter.size))
 
     // 分区写入
+    spark.catalog.setCurrentDatabase(database)
     val partitionOption = partitionInfo(partitionKey, partitionValue)
     if (partitionOption.nonEmpty) {
       dataset.write.partitionBy(partitionOption.get).format(format).mode(SaveMode.Overwrite)

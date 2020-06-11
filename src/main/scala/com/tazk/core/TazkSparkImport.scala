@@ -25,6 +25,7 @@ object TazkSparkImport extends TazkSparkCore with Logging {
     arguments.mongoCondition,
     arguments.mongoConditionEncrypt,
     arguments.mongoCamelConvert,
+    arguments.mongoReadPreference,
     arguments.mongoOtherConf)
 
   lazy private val sparkHive = (spark: SparkSession, arguments: SparkImportArguments) => new SparkHiveSink(spark,

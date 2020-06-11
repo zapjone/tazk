@@ -44,6 +44,7 @@ public class TazkSubmitOptionParser {
      */
     protected final String MONGO_DATABASE = "--mongo-database";
     protected final String MONGO_COLLECTION = "--mongo-collection";
+    protected final String MONGO_READ_PREFERENCE = "--mongo-read-preference";
     protected final String MONGO_EXTERNAL_CONF = "--mongo-conf";
     protected final String MONGO_IMPORT_CONDITION = "--mongo-import-condition";
     protected final String MONGO_IMPORT_CONDITION_ENCRYPT_TYPE = "--mongo-import-condition-encrypt";

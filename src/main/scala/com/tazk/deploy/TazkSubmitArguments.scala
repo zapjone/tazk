@@ -39,6 +39,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
   var sparkNumExecutor: String = null
   var mongoDatabase: String = null
   var mongoCollection: String = null
+  var mongoReadPreference: String = "primaryPreferred"
   val mongoexternalProperties: HashMap[String, String] = new mutable.HashMap[String, String]()
   var mongoImportCondition: String = null
   var mongoImportConditionEncrypt: String = "base64"
@@ -93,6 +94,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
        |  mongo-ignore-update-key        $mongoIgnoreUpdateKey
        |  mongo-update-mode              $mongoUpdateMode
        |  mongo-camel-convert            $mongoCamelConvert
+       |  mongo-read-preference          $mongoReadPreference
        |  hive-database                  $hiveDatabase
        |  hive-table                     $hiveTable
        |  hive-auto-create-table         $hiveAutoCreateTable
@@ -134,6 +136,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
       case SPARK_EXECUTOR_CORES => sparkExecutorCores = value
       case MONGO_DATABASE => mongoDatabase = value
       case MONGO_COLLECTION => mongoCollection = value
+      case MONGO_READ_PREFERENCE => mongoReadPreference = value
       case MONGO_EXTERNAL_CONF =>
         val (confName, confValue) = TazkSubmit.parseTazkConfProperty(value)
         mongoexternalProperties(confName) = confValue
@@ -299,6 +302,17 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
     if (null == name) {
       name = s"${mongoDatabase}_$mongoCollection"
     }
+
+    // 验证mongo读取方式
+    if (null != mongoReadPreference
+      && "primary" != mongoReadPreference
+      && "primaryPreferred" != mongoReadPreference
+      && "secondary" != mongoReadPreference
+      && "secondaryPreferred" != mongoReadPreference
+      && "nearest" != mongoReadPreference) {
+      throw new IllegalArgumentException(s"Mongo ReadPreference输入错误:$mongoReadPreference")
+    }
+
     // 根据同步方式验证参数
     action match {
       case TazkSubmitAction.IMPORT => validateImportArguments()

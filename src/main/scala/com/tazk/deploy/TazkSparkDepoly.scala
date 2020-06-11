@@ -35,19 +35,6 @@ private[tazk] class TazkSparkDepoly(clazz: String,
       .setConf("spark.executor.memory", appArgs.sparkExecutorMemory)
       .setConf("spark.executor.cores", appArgs.sparkExecutorCores)
 
-    println(appArgs.sparkHome)
-    println(appArgs.sparkMaster)
-    println(appArgs.sparkDeployMode)
-    println(appArgs.name)
-    println(clazz)
-    println(appArgs.jar)
-    println(appInputArgs)
-    println(appArgs.sparkQueue)
-    println(appArgs.sparkDriverMemory)
-    println(appArgs.sparkDriverCores)
-    println(appArgs.sparkExecutorMemory)
-    println(appArgs.sparkExecutorCores)
-
     if (null != appArgs.sparkTotalExecutorCores) {
       launcher = launcher.setConf("spark.cores.max", appArgs.sparkTotalExecutorCores)
     }

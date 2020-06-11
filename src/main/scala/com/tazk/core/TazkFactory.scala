@@ -39,7 +39,8 @@ private[tazk] object TazkFactory {
     def sparkExportArgs(tazkArgs: TazkSubmitArguments): SparkExportArguments = {
       SparkExportArguments(tazkArgs.name, tazkArgs.connect, tazkArgs.mongoDatabase, tazkArgs.mongoCollection,
         tazkArgs.username, tazkArgs.password, tazkArgs.mongoCamelConvert, tazkArgs.mongoUpdateMode,
-        Option(tazkArgs.mongoUpdateKey), Option(tazkArgs.mongoIgnoreUpdateKey), Option(tazkArgs.mongoexternalProperties),
+        Option(tazkArgs.mongoUpdateKey), Option(tazkArgs.mongoIgnoreUpdateKey),
+        Option(tazkArgs.mongoexternalProperties.toMap),
         tazkArgs.hiveDatabase, tazkArgs.hiveTable, Option(tazkArgs.hiveExportCondition))
     }
 

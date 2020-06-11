@@ -73,7 +73,7 @@ case class SparkExportArguments(name: String,
                                 mongoUpdateMode: String,
                                 mongoUpdateKey: Option[String],
                                 mongoIgnoreUpdateKey: Option[String],
-                                mongoOtherConf: Option[mutable.HashMap[String, String]] = None,
+                                mongoOtherConf: Option[Map[String, String]] = None,
                                 hiveDatabase: String = "default",
                                 hiveTable: String,
                                 hiveCondition: Option[String])

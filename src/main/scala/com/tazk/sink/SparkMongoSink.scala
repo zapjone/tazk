@@ -4,7 +4,7 @@ import java.lang.{Object => JObject}
 import java.util.{List => JList, Map => JMap}
 
 import com.mongodb.client.MongoCollection
-import com.mongodb.client.model.{DeleteOneModel, Filters, UpdateOneModel, UpdateOptions, WriteModel}
+import com.mongodb.client.model.{DeleteOneModel, Filters, UpdateOneModel, UpdateOptions}
 import com.mongodb.spark.config.{ReadConfig, WriteConfig}
 import com.mongodb.spark.{MongoConnector, MongoSpark}
 import com.tazk.common.TazkCommon
@@ -16,7 +16,6 @@ import org.apache.spark.util.LongAccumulator
 import org.bson.Document
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 import scala.reflect.ClassTag
 
 /**
@@ -37,7 +36,7 @@ class SparkMongoSink(spark: SparkSession,
                      collection: String,
                      username: String,
                      password: String,
-                     otherConf: mutable.HashMap[String, String],
+                     otherConf: Option[Map[String, String]] = None,
                      updateMode: TazkMongoUpdateModeAction,
                      updateKey: Option[String],
                      ignoreUpdateKey: Option[String],
@@ -59,11 +58,12 @@ class SparkMongoSink(spark: SparkSession,
   override def write(dataset: Dataset[Row]): (Long, Long, Long) = {
 
     // mongo配置信息
+    val mongoOtherConfMap = if (otherConf.nonEmpty) otherConf.get else Map()
     val mongoConfigMap = Map(
       "uri" -> Utils.buildMongoUri(uri, username, password),
       "database" -> database,
       "collection" -> collection
-    ) ++ otherConf
+    ) ++ mongoOtherConfMap
     val readConfig: ReadConfig = ReadConfig(mongoConfigMap)
     val writeConfig: WriteConfig = WriteConfig(mongoConfigMap)
 

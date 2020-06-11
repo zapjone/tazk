@@ -30,7 +30,7 @@ object TazkSparkExport extends TazkSparkCore with Logging {
     arguments.mongoCollection,
     arguments.mongoUserName,
     arguments.mongoPassword,
-    arguments.mongoOtherConf.getOrElse(mutable.HashMap()),
+    arguments.mongoOtherConf,
     TazkMongoUpdateModeAction.findOf(arguments.mongoUpdateMode),
     arguments.mongoUpdateKey,
     arguments.mongoIgnoreUpdateKey,

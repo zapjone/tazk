@@ -168,7 +168,7 @@ class SparkMongoSink(spark: SparkSession,
       val updateData = aliasCurDS.join(mongoDS,
         $"$updateKeyStr" === $"${updateKeyStr}__update", "inner")
         .selectExpr(Utils.findColNams(curCols, hisCols, "cur_ds", updateAlias,
-          ignoreUpdateKey.getOrElse("") ++ s"$updateAlias._id"): _*)
+          ignoreUpdateKey.getOrElse("")): _*)
 
       // 驼峰转换名称
       val convertKeyName = if (camelConvertBool) Utils.line2Hump(updateKeyStr) else updateKeyStr

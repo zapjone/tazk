@@ -144,7 +144,7 @@ class SparkMongoSink(spark: SparkSession,
 
     // 需要新增添加的数据
     val preInsert = aliasCurDS.join(mongoDS,
-      $"$updateKeyStr" === $"${updateKeyStr}_copy", "left")
+      $"$updateKeyStr" === $"${updateKeyStr}__update", "left")
       .where(s"${updateKeyStr}__update is null")
       .select(curCols.map(c => $"$currentAlias.$c"): _*)
     val updateMongoCount = spark.sparkContext.longAccumulator("UPDATE_MONGO_COUNT")
@@ -152,7 +152,7 @@ class SparkMongoSink(spark: SparkSession,
 
     // 需要更新的数据
     val updateData = aliasCurDS.join(mongoDS,
-      $"$updateKeyStr" === $"${updateKeyStr}_copy", "inner")
+      $"$updateKeyStr" === $"${updateKeyStr}__update", "inner")
       .selectExpr(Utils.findColNams(curCols, hisCols, "cur_ds", updateAlias,
         ignoreUpdateKey.getOrElse("") ++ s"$updateAlias._id"): _*)
 

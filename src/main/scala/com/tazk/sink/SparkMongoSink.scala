@@ -94,30 +94,37 @@ class SparkMongoSink(spark: SparkSession,
     val newCurrentDataset = dataset.withColumnRenamed(updateKeyStr, s"${updateKeyStr}__delete")
 
     val deleteCount = spark.sparkContext.longAccumulator("DELETE_MONGO_COUNT")
+    val historyCount = spark.sparkContext.longAccumulator("HISTORY_MONGO_COUNT")
 
     val deleteAlias = "his_del_ds"
-    val mongoDS = readMongoHistory(readConfig, deleteAlias)
-    val hisCols = mongoDS.columns
-    val deleteData = newCurrentDataset.alias("cur_ds").join(mongoDS,
-      $"$updateKeyStr" === $"${updateKeyStr}__delete", "right")
-      .where(s"${updateKeyStr}__delete is null")
-      .select(hisCols.map(c => $"$deleteAlias.$c"): _*)
+    val mongoDS = readMongoHistory(readConfig, deleteAlias, historyCount)
 
-    // 驼峰转换名称
-    val convertKeyName = if (camelConvertBool) Utils.line2Hump(updateKeyStr) else updateKeyStr
+    // 检查mongo中是否有数据
+    if (historyCount.value <= 0) {
+      (insert(dataset, writeConfig), 0, 0)
+    } else {
+      val hisCols = mongoDS.columns
+      val deleteData = newCurrentDataset.alias("cur_ds").join(mongoDS,
+        $"$updateKeyStr" === $"${updateKeyStr}__delete", "right")
+        .where(s"${updateKeyStr}__delete is null")
+        .select(hisCols.map(c => $"$deleteAlias.$c"): _*)
 
-    // 批量删除
-    operateMongo[Document](deleteData, writeConfig, deleteCount, (collection, docList) => {
-      val delete = docList.asScala.map { doc =>
-        new DeleteOneModel[Document](Filters.eq(s"$convertKeyName", doc.get(convertKeyName)))
-      }
-      collection.bulkWrite(delete.asJava)
-    })
+      // 驼峰转换名称
+      val convertKeyName = if (camelConvertBool) Utils.line2Hump(updateKeyStr) else updateKeyStr
 
-    // 删除多余数据后进行更新
-    val updateInfo = update(dataset, readConfig, writeConfig)
+      // 批量删除
+      operateMongo[Document](deleteData, writeConfig, deleteCount, (collection, docList) => {
+        val delete = docList.asScala.map { doc =>
+          new DeleteOneModel[Document](Filters.eq(s"$convertKeyName", doc.get(convertKeyName)))
+        }
+        collection.bulkWrite(delete.asJava)
+      })
 
-    (updateInfo._1, updateInfo._2, deleteCount.value)
+      // 删除多余数据后进行更新
+      val updateInfo = update(dataset, readConfig, writeConfig)
+
+      (updateInfo._1, updateInfo._2, deleteCount.value)
+    }
   }
 
   /**
@@ -132,45 +139,53 @@ class SparkMongoSink(spark: SparkSession,
     assert(updateKey.nonEmpty, "当更新模式时，更新key不能为空")
     val updateKeyStr = updateKey.get
 
+    val histroyCount = spark.sparkContext.longAccumulator("UPDATE_HISTORY_MONGO_COUNT")
+
     // mongo中现存的数据
     val updateAlias = "his_up_ds"
     val currentAlias = "cur_ds"
-    val mongoDS = readMongoHistory(readConfig, updateAlias)
+    val mongoDS = readMongoHistory(readConfig, updateAlias, histroyCount)
       .withColumnRenamed(updateKeyStr, s"${updateKeyStr}__update")
-    val aliasCurDS = dataset.alias(currentAlias)
 
-    val curCols = aliasCurDS.columns
-    val hisCols = mongoDS.columns
+    // 检查mongo中是否有数据
+    if (histroyCount.value <= 0) {
+      (insert(dataset, writeConfig), 0)
+    } else {
+      val aliasCurDS = dataset.alias(currentAlias)
 
-    // 需要新增添加的数据
-    val preInsert = aliasCurDS.join(mongoDS,
-      $"$updateKeyStr" === $"${updateKeyStr}__update", "left")
-      .where(s"${updateKeyStr}__update is null")
-      .select(curCols.map(c => $"$currentAlias.$c"): _*)
-    val updateMongoCount = spark.sparkContext.longAccumulator("UPDATE_MONGO_COUNT")
-    val insertCount = insert(preInsert, writeConfig)
+      val curCols = aliasCurDS.columns
+      val hisCols = mongoDS.columns
 
-    // 需要更新的数据
-    val updateData = aliasCurDS.join(mongoDS,
-      $"$updateKeyStr" === $"${updateKeyStr}__update", "inner")
-      .selectExpr(Utils.findColNams(curCols, hisCols, "cur_ds", updateAlias,
-        ignoreUpdateKey.getOrElse("") ++ s"$updateAlias._id"): _*)
+      // 需要新增添加的数据
+      val preInsert = aliasCurDS.join(mongoDS,
+        $"$updateKeyStr" === $"${updateKeyStr}__update", "left")
+        .where(s"${updateKeyStr}__update is null")
+        .select(curCols.map(c => $"$currentAlias.$c"): _*)
+      val updateMongoCount = spark.sparkContext.longAccumulator("UPDATE_MONGO_COUNT")
+      val insertCount = insert(preInsert, writeConfig)
 
-    // 驼峰转换名称
-    val convertKeyName = if (camelConvertBool) Utils.line2Hump(updateKeyStr) else updateKeyStr
+      // 需要更新的数据
+      val updateData = aliasCurDS.join(mongoDS,
+        $"$updateKeyStr" === $"${updateKeyStr}__update", "inner")
+        .selectExpr(Utils.findColNams(curCols, hisCols, "cur_ds", updateAlias,
+          ignoreUpdateKey.getOrElse("") ++ s"$updateAlias._id"): _*)
 
-    // 批量更新
-    operateMongo[Document](updateData, writeConfig, updateMongoCount, (collection, docList) => {
-      val upsert = docList.asScala.map { doc =>
-        val modifiers = new Document()
-        modifiers.put("$set", doc)
-        new UpdateOneModel[Document](Filters.eq(s"$convertKeyName", doc.get(convertKeyName)),
-          modifiers, new UpdateOptions().upsert(true))
-      }
-      collection.bulkWrite(upsert.asJava)
-    })
+      // 驼峰转换名称
+      val convertKeyName = if (camelConvertBool) Utils.line2Hump(updateKeyStr) else updateKeyStr
 
-    (insertCount, updateMongoCount.value)
+      // 批量更新
+      operateMongo[Document](updateData, writeConfig, updateMongoCount, (collection, docList) => {
+        val upsert = docList.asScala.map { doc =>
+          val modifiers = new Document()
+          modifiers.put("$set", doc)
+          new UpdateOneModel[Document](Filters.eq(s"$convertKeyName", doc.get(convertKeyName)),
+            modifiers, new UpdateOptions().upsert(true))
+        }
+        collection.bulkWrite(upsert.asJava)
+      })
+
+      (insertCount, updateMongoCount.value)
+    }
   }
 
   /**
@@ -229,9 +244,12 @@ class SparkMongoSink(spark: SparkSession,
    *
    * @param readConfig mongo配置
    */
-  private def readMongoHistory(readConfig: ReadConfig, aliasName: String): Dataset[Row] = {
+  private def readMongoHistory(readConfig: ReadConfig, aliasName: String,
+                               historyCount: LongAccumulator): Dataset[Row] = {
     spark.read.json(MongoSpark.load(spark.sparkContext, readConfig)
-      .mapPartitions(_.map(content2JSON)).toDS)
-      .alias(aliasName)
+      .mapPartitions(_.map { m =>
+        historyCount.add(1)
+        content2JSON(m)
+      }).toDS).alias(aliasName)
   }
 }

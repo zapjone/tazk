@@ -87,23 +87,35 @@ class SparkMongoSink(spark: SparkSession,
    * @return
    */
   private def delete(dataset: Dataset[Row], readConfig: ReadConfig, writeConfig: WriteConfig): (Long, Long, Long) = {
-    val updateInfo = update(dataset, readConfig, writeConfig)
+    assert(updateKey.nonEmpty, "当更新模式时，更新key不能为空")
+    val updateKeyStr = updateKey.get
+
+    // 对关联列进行重命名
+    val newCurrentDataset = dataset.withColumnRenamed(updateKeyStr, s"${updateKeyStr}__delete")
+
     val deleteCount = spark.sparkContext.longAccumulator("DELETE_MONGO_COUNT")
 
     val deleteAlias = "his_del_ds"
     val mongoDS = readMongoHistory(readConfig, deleteAlias)
     val hisCols = mongoDS.columns
-    val deleteData = dataset.alias("cur_ds").join(mongoDS, $"$updateKey", "right join")
-      .where(s"cur_ds.$updateKey is null")
-      .selectExpr(hisCols.map(c => s"$deleteAlias.$c"): _*)
+    val deleteData = newCurrentDataset.alias("cur_ds").join(mongoDS,
+      $"$updateKeyStr" === $"${updateKeyStr}__delete", "right")
+      .where(s"${updateKeyStr}__delete is null")
+      .select(hisCols.map(c => $"$deleteAlias.$c"): _*)
+
+    // 驼峰转换名称
+    val convertKeyName = if (camelConvertBool) Utils.line2Hump(updateKeyStr) else updateKeyStr
 
     // 批量删除
     operateMongo[Document](deleteData, writeConfig, deleteCount, (collection, docList) => {
       val delete = docList.asScala.map { doc =>
-        new DeleteOneModel[Document](Filters.eq(s"$updateKey", doc.get(updateKey)))
+        new DeleteOneModel[Document](Filters.eq(s"$convertKeyName", doc.get(convertKeyName)))
       }
       collection.bulkWrite(delete.asJava)
     })
+
+    // 删除多余数据后进行更新
+    val updateInfo = update(dataset, readConfig, writeConfig)
 
     (updateInfo._1, updateInfo._2, deleteCount.value)
   }
@@ -117,30 +129,42 @@ class SparkMongoSink(spark: SparkSession,
    * @return 成功更新条数和新增条数
    */
   private def update(dataset: Dataset[Row], readConfig: ReadConfig, writeConfig: WriteConfig): (Long, Long) = {
+    assert(updateKey.nonEmpty, "当更新模式时，更新key不能为空")
+    val updateKeyStr = updateKey.get
+
     // mongo中现存的数据
     val updateAlias = "his_up_ds"
+    val currentAlias = "cur_ds"
     val mongoDS = readMongoHistory(readConfig, updateAlias)
-    val aliasCurDS = dataset.alias("cur_ds")
+      .withColumnRenamed(updateKeyStr, s"${updateKeyStr}__update")
+    val aliasCurDS = dataset.alias(currentAlias)
 
     val curCols = aliasCurDS.columns
     val hisCols = mongoDS.columns
 
     // 需要新增添加的数据
-    val preInsert = aliasCurDS.join(mongoDS, $"$updateKey", "left semi join")
-      .where(s"$updateAlias.$updateKey is null")
+    val preInsert = aliasCurDS.join(mongoDS,
+      $"$updateKeyStr" === $"${updateKeyStr}_copy", "left")
+      .where(s"${updateKeyStr}__update is null")
+      .select(curCols.map(c => $"$currentAlias.$c"): _*)
     val updateMongoCount = spark.sparkContext.longAccumulator("UPDATE_MONGO_COUNT")
     val insertCount = insert(preInsert, writeConfig)
 
     // 需要更新的数据
-    val updateData = aliasCurDS.join(mongoDS, $"$updateKey", "inner join")
+    val updateData = aliasCurDS.join(mongoDS,
+      $"$updateKeyStr" === $"${updateKeyStr}_copy", "inner")
       .selectExpr(Utils.findColNams(curCols, hisCols, "cur_ds", updateAlias,
         ignoreUpdateKey.getOrElse("") ++ s"$updateAlias._id"): _*)
+
+    // 驼峰转换名称
+    val convertKeyName = if (camelConvertBool) Utils.line2Hump(updateKeyStr) else updateKeyStr
+
     // 批量更新
     operateMongo[Document](updateData, writeConfig, updateMongoCount, (collection, docList) => {
       val upsert = docList.asScala.map { doc =>
         val modifiers = new Document()
         modifiers.put("$set", doc)
-        new UpdateOneModel[Document](Filters.eq(s"$updateKey", doc.get(updateKey)),
+        new UpdateOneModel[Document](Filters.eq(s"$convertKeyName", doc.get(convertKeyName)),
           modifiers, new UpdateOptions().upsert(true))
       }
       collection.bulkWrite(upsert.asJava)
@@ -172,13 +196,15 @@ class SparkMongoSink(spark: SparkSession,
    */
   private def operateMongo[D: ClassTag](dataset: Dataset[Row], writeConfig: WriteConfig,
                                         longAccumulator: LongAccumulator, intoMongoFun: (MongoCollection[D], JList[Document]) => Unit): Unit = {
+
+    // 获取dataset的所有列名,如果需要将列名进行转换，则进行转换
+    val colNames = if (camelConvert) {
+      dataset.columns.map(Utils.line2Hump)
+    } else dataset.columns
+
     dataset.foreachPartition(rowPartition => {
       // 创建Mongoecotr
       val mongoConnector = MongoConnector(writeConfig.asOptions)
-      // 获取dataset的所有列名,如果需要将列名进行转换，则进行转换
-      val colNames = if (camelConvert) {
-        dataset.columns.map(Utils.line2Hump)
-      } else dataset.columns
 
       if (rowPartition.nonEmpty) {
         // 将Row转换成Document后，再进行批量插入

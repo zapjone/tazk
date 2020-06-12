@@ -38,7 +38,7 @@ private[tazk] object TazkExecutionEngineAction extends Enumeration {
 private[tazk] object TazkMongoUpdateModeAction extends Enumeration {
   val allowInsert = "allowInsert"
   val allowUpdate = "allowUpdate"
-  val allowDelete = "allDelete"
+  val allowDelete = "allowDelete"
   type TazkMongoUpdateModeAction = Value
   val ALLOW_INSERT: deploy.TazkMongoUpdateModeAction.Value = Value(allowInsert)
   val ALLOW_UPDATE: deploy.TazkMongoUpdateModeAction.Value = Value(allowUpdate)

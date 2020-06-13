@@ -137,31 +137,24 @@ class SparkMongoSink(spark: SparkSession,
     val histroyCount = spark.sparkContext.longAccumulator("UPDATE_HISTORY_MONGO_COUNT")
 
     // mongo中现存的数据
-    val updateAlias = "his_up_ds"
-    val currentAlias = "cur_ds"
-    val mongoHistoryDS = readMongoHistory(readConfig, histroyCount).alias(updateAlias)
+    val mongoHistoryDS = readMongoHistory(readConfig, histroyCount)
 
     // 检查mongo中是否有数据
     if (histroyCount.value <= 0) {
       (insert(currentDS, writeConfig), 0)
     } else {
-      // 对当前Dataset进行重命名
-      val aliasCurrentDS = currentDS.alias(currentAlias)
-
-      val currentCols = aliasCurrentDS.columns
-      val historyCols = mongoHistoryDS.columns
 
       // 需要新增添加的数据，left_anti返回左边表在右边表中无法匹配的数据，也就是当前存在历史不存在
-      val preInsert = aliasCurrentDS.join(mongoHistoryDS,
-        aliasCurrentDS(updateKeyStr) === mongoHistoryDS(updateKeyStr), "left_anti")
+      val preInsert = currentDS.join(mongoHistoryDS,
+        currentDS(updateKeyStr) === mongoHistoryDS(updateKeyStr), "left_anti")
       val updateMongoCount = spark.sparkContext.longAccumulator("UPDATE_MONGO_COUNT")
       val insertCount = insert(preInsert, writeConfig)
 
       // 需要更新的数据
-      val updateData = aliasCurrentDS.join(mongoHistoryDS,
-        aliasCurrentDS(updateKeyStr) === mongoHistoryDS(updateKeyStr), "inner")
-        .selectExpr(Utils.findColNams(currentCols, historyCols, currentAlias, updateAlias,
-          ignoreUpdateKey.getOrElse("")): _*)
+      val currentColumns = currentDS.columns
+      val updateData = currentDS.join(mongoHistoryDS,
+        currentDS(updateKeyStr) === mongoHistoryDS(updateKeyStr), "left_semi")
+        .selectExpr(Utils.findColNams(currentColumns, ignoreUpdateKey.getOrElse("")): _*)
 
       // 驼峰转换名称
       val convertKeyName = if (camelConvertBool) Utils.line2Hump(updateKeyStr) else updateKeyStr

@@ -81,33 +81,28 @@ class SparkMongoSink(spark: SparkSession,
   /**
    * 需要删除到数据
    *
-   * @param dataset     Dataset[Row
+   * @param currentDS   Dataset[Row
    * @param readConfig  mongo读取配置信息
    * @param writeConfig mongo写入配置信息
    * @return
    */
-  private def delete(dataset: Dataset[Row], readConfig: ReadConfig, writeConfig: WriteConfig): (Long, Long, Long) = {
+  private def delete(currentDS: Dataset[Row], readConfig: ReadConfig, writeConfig: WriteConfig): (Long, Long, Long) = {
     assert(updateKey.nonEmpty, "当更新模式时，更新key不能为空")
     val updateKeyStr = updateKey.get
-
-    // 对关联列进行重命名
-    val newCurrentDataset = dataset.withColumnRenamed(updateKeyStr, s"${updateKeyStr}__delete")
 
     val deleteCount = spark.sparkContext.longAccumulator("DELETE_MONGO_COUNT")
     val historyCount = spark.sparkContext.longAccumulator("HISTORY_MONGO_COUNT")
 
-    val deleteAlias = "his_del_ds"
-    val mongoDS = readMongoHistory(readConfig, deleteAlias, historyCount)
+    // 查询mongo历史数据
+    val mongoDS = readMongoHistory(readConfig, historyCount)
 
     // 检查mongo中是否有数据
     if (historyCount.value <= 0) {
-      (insert(dataset, writeConfig), 0, 0)
+      (insert(currentDS, writeConfig), 0, 0)
     } else {
-      val hisCols = mongoDS.columns
-      val deleteData = newCurrentDataset.alias("cur_ds").join(mongoDS,
-        $"$updateKeyStr" === $"${updateKeyStr}__delete", "right")
-        .where(s"${updateKeyStr}__delete is null")
-        .select(hisCols.map(c => $"$deleteAlias.$c"): _*)
+      // 使用left_anti进行join，返回左边表中不存在于右边表中的数据，也就是历史表存在，当前不存在
+      val deleteData = mongoDS.join(currentDS,
+        mongoDS(updateKeyStr) === currentDS(updateKeyStr), "left_anti")
 
       // 驼峰转换名称
       val convertKeyName = if (camelConvertBool) Utils.line2Hump(updateKeyStr) else updateKeyStr
@@ -121,7 +116,7 @@ class SparkMongoSink(spark: SparkSession,
       })
 
       // 删除多余数据后进行更新
-      val updateInfo = update(dataset, readConfig, writeConfig)
+      val updateInfo = update(currentDS, readConfig, writeConfig)
 
       (updateInfo._1, updateInfo._2, deleteCount.value)
     }
@@ -130,12 +125,12 @@ class SparkMongoSink(spark: SparkSession,
   /**
    * 数据更新到mongo
    *
-   * @param dataset     Dataset[Row]
+   * @param currentDS   Dataset[Row]
    * @param readConfig  mongo配置信息
    * @param writeConfig mongo写入配置信息
    * @return 成功更新条数和新增条数
    */
-  private def update(dataset: Dataset[Row], readConfig: ReadConfig, writeConfig: WriteConfig): (Long, Long) = {
+  private def update(currentDS: Dataset[Row], readConfig: ReadConfig, writeConfig: WriteConfig): (Long, Long) = {
     assert(updateKey.nonEmpty, "当更新模式时，更新key不能为空")
     val updateKeyStr = updateKey.get
 
@@ -144,30 +139,28 @@ class SparkMongoSink(spark: SparkSession,
     // mongo中现存的数据
     val updateAlias = "his_up_ds"
     val currentAlias = "cur_ds"
-    val mongoDS = readMongoHistory(readConfig, updateAlias, histroyCount)
-      .withColumnRenamed(updateKeyStr, s"${updateKeyStr}__update")
+    val mongoHistoryDS = readMongoHistory(readConfig, histroyCount).alias(updateAlias)
 
     // 检查mongo中是否有数据
     if (histroyCount.value <= 0) {
-      (insert(dataset, writeConfig), 0)
+      (insert(currentDS, writeConfig), 0)
     } else {
-      val aliasCurDS = dataset.alias(currentAlias)
+      // 对当前Dataset进行重命名
+      val aliasCurrentDS = currentDS.alias(currentAlias)
 
-      val curCols = aliasCurDS.columns
-      val hisCols = mongoDS.columns
+      val currentCols = aliasCurrentDS.columns
+      val historyCols = mongoHistoryDS.columns
 
-      // 需要新增添加的数据
-      val preInsert = aliasCurDS.join(mongoDS,
-        $"$updateKeyStr" === $"${updateKeyStr}__update", "left")
-        .where(s"${updateKeyStr}__update is null")
-        .select(curCols.map(c => $"$currentAlias.$c"): _*)
+      // 需要新增添加的数据，left_anti返回左边表在右边表中无法匹配的数据，也就是当前存在历史不存在
+      val preInsert = aliasCurrentDS.join(mongoHistoryDS,
+        aliasCurrentDS(updateKeyStr) === mongoHistoryDS(updateKeyStr), "left_anti")
       val updateMongoCount = spark.sparkContext.longAccumulator("UPDATE_MONGO_COUNT")
       val insertCount = insert(preInsert, writeConfig)
 
       // 需要更新的数据
-      val updateData = aliasCurDS.join(mongoDS,
-        $"$updateKeyStr" === $"${updateKeyStr}__update", "inner")
-        .selectExpr(Utils.findColNams(curCols, hisCols, currentAlias, updateAlias,
+      val updateData = aliasCurrentDS.join(mongoHistoryDS,
+        aliasCurrentDS(updateKeyStr) === mongoHistoryDS(updateKeyStr), "inner")
+        .selectExpr(Utils.findColNams(currentCols, historyCols, currentAlias, updateAlias,
           ignoreUpdateKey.getOrElse("")): _*)
 
       // 驼峰转换名称
@@ -244,12 +237,11 @@ class SparkMongoSink(spark: SparkSession,
    *
    * @param readConfig mongo配置
    */
-  private def readMongoHistory(readConfig: ReadConfig, aliasName: String,
-                               historyCount: LongAccumulator): Dataset[Row] = {
+  private def readMongoHistory(readConfig: ReadConfig, historyCount: LongAccumulator): Dataset[Row] = {
     spark.read.json(MongoSpark.load(spark.sparkContext, readConfig)
       .mapPartitions(_.map { m =>
         historyCount.add(1)
         content2JSON(m)
-      }).toDS).alias(aliasName)
+      }).toDS)
   }
 }

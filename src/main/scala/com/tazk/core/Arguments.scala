@@ -1,5 +1,6 @@
 package com.tazk.core
 
+import com.tazk.deploy.TazkHiveTableModeAction
 import com.tazk.deploy.TazkMongoUpdateModeAction.TazkMongoUpdateModeAction
 
 import scala.collection.mutable
@@ -39,6 +40,7 @@ case class SparkImportArguments(name: String,
                                 hivePartitionValue: String,
                                 hiveDatabase: String = "default",
                                 hiveFormat: String = "text",
+                                hiveTableMode: String = TazkHiveTableModeAction.json,
                                 mongoCamelConvert: Boolean = true,
                                 mongoReadPreference: String = "primaryPreferred",
                                 mongoOtherConf: Option[Map[String, String]] = None,

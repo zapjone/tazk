@@ -52,6 +52,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
   var hiveAutoCreateTable: Boolean = false
   var hiveDeleteTableIfExists: Boolean = false
   var hiveFormat: String = null
+  var hiveTableMode: String = "json"
   var hivePartitionKey: String = null
   var hivePartitionValue: String = null
   var hiveEnableDynamic: Boolean = false
@@ -100,6 +101,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
        |  hive-auto-create-table         $hiveAutoCreateTable
        |  hive-delete-table-if-exists    $hiveDeleteTableIfExists
        |  hive-format                    $hiveFormat
+       |  hive-table-mode                $hiveTableMode
        |  hive-partition-key             $hivePartitionKey
        |  hiev-partition-value           $hivePartitionValue
        |  hive-enable-dynamic            $hiveEnableDynamic
@@ -151,6 +153,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
       case HIVE_AUTO_CREATE_TABLE => hiveAutoCreateTable = value.toBoolean
       case HIVE_DELETE_TABLEIF_EXISTS => hiveDeleteTableIfExists = value.toBoolean
       case HIVE_FORMAT => hiveFormat = value
+      case HIVE_TABLE_MODE => hiveTableMode = value
       case HIVE_PARTITION_KEY => hivePartitionKey = value
       case HIVE_PARTITION_VALUE => hivePartitionValue = value
       case HIVE_ENABLE_DYNAMIC => hiveEnableDynamic = value.toBoolean
@@ -236,6 +239,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
          |  --hive-auto-create-table          是否自动创建hive表,默认true
          |  --hive-delete-table-if-exists     当hive存在导出表时，是否需要进行删除，默认为false
          |  --hive-format                     hive存储格式,默认textfile
+         |  --hive-table-mode                 hive表结构模式，struct：将mongo和hive中列进行对应，json：直接存储json字符串，默认json
          |  --hive-partition-key              当增量导入时，hiv的分区键，多个用顺序逗号分隔
          |  --hive-partition-value            当增量导入时，hive当分区键值，多个用顺序逗号分隔，
          |                                    且必须和【--hive-partition-key】个数保持一致
@@ -306,6 +310,11 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
       && "secondaryPreferred" != mongoReadPreference
       && "nearest" != mongoReadPreference) {
       throw new IllegalArgumentException(s"Mongo ReadPreference输入错误:$mongoReadPreference")
+    }
+
+    // 验证hive的目标表格式
+    if (TazkHiveTableModeAction.json != hiveTableMode && TazkHiveTableModeAction.struct != hiveTableMode) {
+      throw new IllegalArgumentException(s"Hive目标表格式错误,未知的格式:$hiveTableMode")
     }
 
     // 根据同步方式验证参数

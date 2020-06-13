@@ -1,6 +1,7 @@
 package com.tazk.sink
 
-import org.apache.spark.sql.{Dataset, SaveMode, SparkSession}
+import com.tazk.deploy.TazkHiveTableModeAction
+import org.apache.spark.sql.{DataFrame, Dataset, SaveMode, SparkSession}
 
 /**
  * 数据存储到hive
@@ -15,6 +16,7 @@ class SparkHiveSink(spark: SparkSession,
                     partitionKey: String,
                     partitionValue: String,
                     format: String = "text",
+                    tableMode: String = TazkHiveTableModeAction.json,
                     deleteTableIfExists: Boolean = false,
                     enableDynamicPartition: Boolean = false,
                     dynamicPartitionKeys: Option[String] = None) extends TazkSink[Dataset[String], Long] {
@@ -23,6 +25,9 @@ class SparkHiveSink(spark: SparkSession,
    * 写入目标库
    */
   override def write(dataset: Dataset[String]): Long = {
+
+    // 判断最终存储的表格式
+    val newDataset = tableModeStruct(dataset)
 
     // 检查分区键和值是否对应
     if (null != partitionKey && null != partitionValue) {
@@ -43,16 +48,16 @@ class SparkHiveSink(spark: SparkSession,
 
     val mongoCount = spark.sparkContext.longAccumulator("SPARK_IMPORT_MONGO_COUNT")
 
-    dataset.foreachPartition(iter => mongoCount.add(iter.size))
+    newDataset.foreachPartition(iter => mongoCount.add(iter.size))
 
     // 分区写入
     spark.catalog.setCurrentDatabase(database)
     val partitionOption = partitionInfo(partitionKey, partitionValue)
     if (partitionOption.nonEmpty) {
-      dataset.write.partitionBy(partitionOption.get).format(format).mode(SaveMode.Overwrite)
+      newDataset.write.partitionBy(partitionOption.get).format(format).mode(SaveMode.Overwrite)
         .insertInto(table)
     } else if (partitionOption.isEmpty && !enableDynamicPartition) {
-      dataset.write.format(format).mode(SaveMode.Overwrite).saveAsTable(table)
+      newDataset.write.format(format).mode(SaveMode.Overwrite).saveAsTable(table)
     } else {
       if (!enableDynamicPartition) throw new IllegalArgumentException("动态分区必须启动")
       else {
@@ -62,7 +67,7 @@ class SparkHiveSink(spark: SparkSession,
         spark.conf.set("hive.exec.dynamici.partition", "true")
         spark.conf.set("hive.exec.dynamic.partition.mode", "nonstrict")
         spark.conf.set("hive.exec.max.dynamic.partitions", "100000")
-        dataset.write.partitionBy(dynamicPartitionKeys.get.split(","): _*)
+        newDataset.write.partitionBy(dynamicPartitionKeys.get.split(","): _*)
           .mode(SaveMode.Overwrite).saveAsTable(table)
       }
     }
@@ -79,6 +84,15 @@ class SparkHiveSink(spark: SparkSession,
       val tuple = keys.split(",").zip(value.split(","))
       Some(tuple.map(tup => s"${tup._1}='${tup._2}'").mkString(","))
     }
+  }
+
+  /**
+   * 获取最终表存储结构
+   */
+  private def tableModeStruct(dataset: Dataset[String]): DataFrame = tableMode match {
+    case TazkHiveTableModeAction.json => dataset.toDF()
+    case TazkHiveTableModeAction.struct => spark.read.json(dataset)
+    case _ => throw new IllegalArgumentException(s"[$tableMode]不支持的存储格式")
   }
 
 }

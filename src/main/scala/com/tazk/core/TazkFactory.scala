@@ -23,7 +23,7 @@ private[tazk] object TazkFactory {
       SparkImportArguments(tazkArgs.name, tazkArgs.connect, tazkArgs.mongoDatabase, tazkArgs.mongoCollection,
         tazkArgs.username, tazkArgs.password, Option(tazkArgs.mongoImportCondition),
         tazkArgs.mongoImportConditionEncrypt, tazkArgs.hiveTable, tazkArgs.hivePartitionKey,
-        tazkArgs.hivePartitionValue, tazkArgs.hiveDatabase, tazkArgs.hiveFormat,
+        tazkArgs.hivePartitionValue, tazkArgs.hiveDatabase, tazkArgs.hiveFormat, tazkArgs.hiveTableMode,
         tazkArgs.mongoCamelConvert, tazkArgs.mongoReadPreference,
         Option(tazkArgs.mongoexternalProperties.toMap), tazkArgs.hiveDeleteTableIfExists,
         tazkArgs.hiveEnableDynamic, Option(tazkArgs.hiveDynamicPartitionKey))

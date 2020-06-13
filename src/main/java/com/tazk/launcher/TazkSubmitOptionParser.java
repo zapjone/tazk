@@ -61,6 +61,7 @@ public class TazkSubmitOptionParser {
     protected final String HIVE_AUTO_CREATE_TABLE = "--hive-auto-create-table";
     protected final String HIVE_DELETE_TABLEIF_EXISTS = "--hive-delete-table-if-exists";
     protected final String HIVE_FORMAT = "--hive-format";
+    protected final String HIVE_TABLE_MODE = "--hive-table-mode";
     protected final String HIVE_PARTITION_KEY = "--hive-partition-key";
     protected final String HIVE_PARTITION_VALUE = "--hive-partition-value";
     protected final String HIVE_ENABLE_DYNAMIC = "--hive-enable-dynamic";
@@ -96,6 +97,7 @@ public class TazkSubmitOptionParser {
             {SPARK_EXECUTOR_CORES},
             {MONGO_DATABASE},
             {MONGO_COLLECTION},
+            {MONGO_READ_PREFERENCE},
             {MONGO_EXTERNAL_CONF},
             {MONGO_IMPORT_CONDITION},
             {MONGO_IMPORT_CONDITION_ENCRYPT_TYPE},
@@ -108,6 +110,7 @@ public class TazkSubmitOptionParser {
             {HIVE_AUTO_CREATE_TABLE},
             {HIVE_DELETE_TABLEIF_EXISTS},
             {HIVE_FORMAT},
+            {HIVE_TABLE_MODE},
             {HIVE_PARTITION_KEY},
             {HIVE_PARTITION_VALUE},
             {HIVE_ENABLE_DYNAMIC},

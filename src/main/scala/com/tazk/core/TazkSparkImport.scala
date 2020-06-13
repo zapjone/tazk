@@ -34,6 +34,7 @@ object TazkSparkImport extends TazkSparkCore with Logging {
     arguments.hivePartitionKey,
     arguments.hivePartitionValue,
     arguments.hiveFormat,
+    arguments.hiveTableMode,
     arguments.hiveDeleteTableIfExists,
     arguments.hiveEnableDynamicPartition,
     arguments.hiveDynamicPartitionKeys)

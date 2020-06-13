@@ -56,6 +56,17 @@ private[tazk] object TazkMongoUpdateModeAction extends Enumeration {
 
 }
 
+/**
+ * hive sink的表结构
+ */
+private[tazk] object TazkHiveTableModeAction extends Enumeration {
+  val json = "json"
+  val struct = "struct"
+  type TazkHiveTableModeAction = Value
+  val JSON: TazkHiveTableModeAction.Value = TazkHiveTableModeAction.Value(json)
+  val STRUCT: TazkHiveTableModeAction.Value = TazkHiveTableModeAction.Value(struct)
+}
+
 
 /**
  * Main gateway of launching a Tazk application.

@@ -53,6 +53,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
   var hiveAutoCreateTable: Boolean = false
   var hiveDeleteTableIfExists: Boolean = false
   var hiveFormat: String = null
+  var hiveIgnoreExportKey: String = null
   var hiveTableMode: String = "json"
   var hivePartitionKey: String = null
   var hivePartitionValue: String = null
@@ -156,6 +157,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
       case HIVE_AUTO_CREATE_TABLE => hiveAutoCreateTable = value.toBoolean
       case HIVE_DELETE_TABLEIF_EXISTS => hiveDeleteTableIfExists = value.toBoolean
       case HIVE_FORMAT => hiveFormat = value
+      case HIVE_IGNORE_EXPORT_KEY => hiveIgnoreExportKey = value
       case HIVE_TABLE_MODE => hiveTableMode = value
       case HIVE_PARTITION_KEY => hivePartitionKey = value
       case HIVE_PARTITION_VALUE => hivePartitionValue = value
@@ -243,6 +245,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
          |  --hive-auto-create-table          是否自动创建hive表,默认true
          |  --hive-delete-table-if-exists     当hive存在导出表时，是否需要进行删除，默认为false
          |  --hive-format                     hive存储格式,默认textfile
+         |  --hive-ignore-export-key          hive不需要导出的key,用逗号分隔
          |  --hive-table-mode                 hive表结构模式，struct：将mongo和hive中列进行对应，json：直接存储json字符串，默认json
          |  --hive-partition-key              当增量导入时，hiv的分区键，多个用顺序逗号分隔
          |  --hive-partition-value            当增量导入时，hive当分区键值，多个用顺序逗号分隔，

@@ -20,6 +20,7 @@ object TazkSparkExport extends TazkSparkCore with Logging {
   lazy private val sparkHive = (spark: SparkSession, arguments: SparkExportArguments) => new SparkHiveSource(spark,
     arguments.hiveDatabase,
     arguments.hiveTable,
+    Option(arguments.hiveIgnoreExportKey),
     arguments.hiveCondition.getOrElse("1=1"))
 
   lazy private val sparkMongo = (spark: SparkSession, arguments: SparkExportArguments) => new SparkMongoSink(spark,

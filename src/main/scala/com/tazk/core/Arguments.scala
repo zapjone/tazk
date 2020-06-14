@@ -77,4 +77,5 @@ case class SparkExportArguments(name: String,
                                 mongoOtherConf: Option[Map[String, String]] = None,
                                 hiveDatabase: String = "default",
                                 hiveTable: String,
+                                hiveIgnoreExportKey: String,
                                 hiveCondition: Option[String])

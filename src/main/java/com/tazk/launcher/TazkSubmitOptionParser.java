@@ -62,6 +62,7 @@ public class TazkSubmitOptionParser {
     protected final String HIVE_AUTO_CREATE_TABLE = "--hive-auto-create-table";
     protected final String HIVE_DELETE_TABLEIF_EXISTS = "--hive-delete-table-if-exists";
     protected final String HIVE_FORMAT = "--hive-format";
+    protected final String HIVE_IGNORE_EXPORT_KEY = "--hive-ignore-export-key";
     protected final String HIVE_TABLE_MODE = "--hive-table-mode";
     protected final String HIVE_PARTITION_KEY = "--hive-partition-key";
     protected final String HIVE_PARTITION_VALUE = "--hive-partition-value";
@@ -112,6 +113,7 @@ public class TazkSubmitOptionParser {
             {HIVE_AUTO_CREATE_TABLE},
             {HIVE_DELETE_TABLEIF_EXISTS},
             {HIVE_FORMAT},
+            {HIVE_IGNORE_EXPORT_KEY},
             {HIVE_TABLE_MODE},
             {HIVE_PARTITION_KEY},
             {HIVE_PARTITION_VALUE},

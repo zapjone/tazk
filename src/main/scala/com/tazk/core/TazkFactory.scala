@@ -41,7 +41,7 @@ private[tazk] object TazkFactory {
         tazkArgs.username, tazkArgs.password, tazkArgs.mongoQueryOnlyColumn, tazkArgs.mongoCamelConvert, tazkArgs.mongoUpdateMode,
         Option(tazkArgs.mongoUpdateKey), Option(tazkArgs.mongoIgnoreUpdateKey),
         Option(tazkArgs.mongoexternalProperties.toMap),
-        tazkArgs.hiveDatabase, tazkArgs.hiveTable, Option(tazkArgs.hiveExportCondition))
+        tazkArgs.hiveDatabase, tazkArgs.hiveTable, tazkArgs.hiveIgnoreExportKey, Option(tazkArgs.hiveExportCondition))
     }
 
   }

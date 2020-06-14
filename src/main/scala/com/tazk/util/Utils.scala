@@ -129,6 +129,11 @@ private[tazk] object Utils extends Logging {
   }
 
   /**
+   * 将Array中的元素从下划线转换成驼峰
+   */
+  def humpArray2lineArray(array: Array[String]): Array[String] = array.map(line2Hump)
+
+  /**
    * 查找出需要的字段信息
    *
    * @param currentColumns 当前列名称

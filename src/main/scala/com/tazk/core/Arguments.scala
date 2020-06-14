@@ -1,9 +1,6 @@
 package com.tazk.core
 
 import com.tazk.deploy.TazkHiveTableModeAction
-import com.tazk.deploy.TazkMongoUpdateModeAction.TazkMongoUpdateModeAction
-
-import scala.collection.mutable
 
 /**
  * 导入参数
@@ -56,6 +53,7 @@ case class SparkImportArguments(name: String,
  * @param mongoCollection      mongo集合名称
  * @param mongoUserName        mongo用户名
  * @param mongoPassword        mongo密码
+ * @param mongoQueryOnlyColumn mongo只查询关联字段
  * @param mongoCamelConvert    是否将hive的字段转换成mongo的驼峰命名
  * @param mongoUpdateMode      mongo更新模式：allowInsert,allowUpdte,allowDelete
  * @param mongoUpdateKey       mongo更新的key
@@ -71,6 +69,7 @@ case class SparkExportArguments(name: String,
                                 mongoCollection: String,
                                 mongoUserName: String,
                                 mongoPassword: String,
+                                mongoQueryOnlyColumn: Boolean = false,
                                 mongoCamelConvert: Boolean = true,
                                 mongoUpdateMode: String,
                                 mongoUpdateKey: Option[String],

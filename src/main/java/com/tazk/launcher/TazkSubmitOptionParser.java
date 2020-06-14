@@ -44,6 +44,7 @@ public class TazkSubmitOptionParser {
      */
     protected final String MONGO_DATABASE = "--mongo-database";
     protected final String MONGO_COLLECTION = "--mongo-collection";
+    protected final String MONGO_QUERY_ONLY_COLUMN = "--mongo-query-only-column";
     protected final String MONGO_READ_PREFERENCE = "--mongo-read-preference";
     protected final String MONGO_EXTERNAL_CONF = "--mongo-conf";
     protected final String MONGO_IMPORT_CONDITION = "--mongo-import-condition";
@@ -97,6 +98,7 @@ public class TazkSubmitOptionParser {
             {SPARK_EXECUTOR_CORES},
             {MONGO_DATABASE},
             {MONGO_COLLECTION},
+            {MONGO_QUERY_ONLY_COLUMN},
             {MONGO_READ_PREFERENCE},
             {MONGO_EXTERNAL_CONF},
             {MONGO_IMPORT_CONDITION},

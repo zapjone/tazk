@@ -11,6 +11,7 @@ import com.tazk.common.TazkCommon
 import com.tazk.deploy.TazkMongoUpdateModeAction
 import com.tazk.deploy.TazkMongoUpdateModeAction.TazkMongoUpdateModeAction
 import com.tazk.util.Utils
+import org.apache.spark.sql.types.DataTypes
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.util.LongAccumulator
 import org.bson.Document
@@ -36,6 +37,7 @@ class SparkMongoSink(spark: SparkSession,
                      collection: String,
                      username: String,
                      password: String,
+                     queryOnlyColumn: Boolean = false,
                      otherConf: Option[Map[String, String]] = None,
                      updateMode: TazkMongoUpdateModeAction,
                      updateKey: Option[String],
@@ -70,9 +72,9 @@ class SparkMongoSink(spark: SparkSession,
     updateMode match {
       case TazkMongoUpdateModeAction.ALLOW_INSERT => (insert(dataset, writeConfig), 0, 0)
       case TazkMongoUpdateModeAction.ALLOW_UPDATE =>
-        val updateResult = update(dataset, readConfig, writeConfig)
+        val updateResult = update(dataset, readConfig, writeConfig, mongoConfigMap)
         (updateResult._1, updateResult._2, 0)
-      case TazkMongoUpdateModeAction.ALLOW_DELETE => delete(dataset, readConfig, writeConfig)
+      case TazkMongoUpdateModeAction.ALLOW_DELETE => delete(dataset, readConfig, writeConfig, mongoConfigMap)
 
       case _ => throw new IllegalArgumentException(s"[$updateMode]不支持到类型")
     }
@@ -86,7 +88,9 @@ class SparkMongoSink(spark: SparkSession,
    * @param writeConfig mongo写入配置信息
    * @return
    */
-  private def delete(currentDS: Dataset[Row], readConfig: ReadConfig, writeConfig: WriteConfig): (Long, Long, Long) = {
+  private def delete(currentDS: Dataset[Row],
+                     readConfig: ReadConfig, writeConfig: WriteConfig,
+                     mongoConfigMap: Map[String, String]): (Long, Long, Long) = {
     assert(updateKey.nonEmpty, "当更新模式时，更新key不能为空")
     val updateKeyStr = updateKey.get
 
@@ -94,7 +98,7 @@ class SparkMongoSink(spark: SparkSession,
     val historyCount = spark.sparkContext.longAccumulator("HISTORY_MONGO_COUNT")
 
     // 查询mongo历史数据
-    val mongoDS = readMongoHistory(readConfig, historyCount)
+    val mongoDS = readMongoHistory(readConfig, historyCount, mongoConfigMap)
 
     // 检查mongo中是否有数据
     if (historyCount.value <= 0) {
@@ -116,7 +120,7 @@ class SparkMongoSink(spark: SparkSession,
       })
 
       // 删除多余数据后进行更新
-      val updateInfo = update(currentDS, readConfig, writeConfig)
+      val updateInfo = update(currentDS, readConfig, writeConfig, mongoConfigMap)
 
       (updateInfo._1, updateInfo._2, deleteCount.value)
     }
@@ -130,14 +134,16 @@ class SparkMongoSink(spark: SparkSession,
    * @param writeConfig mongo写入配置信息
    * @return 成功更新条数和新增条数
    */
-  private def update(currentDS: Dataset[Row], readConfig: ReadConfig, writeConfig: WriteConfig): (Long, Long) = {
+  private def update(currentDS: Dataset[Row],
+                     readConfig: ReadConfig, writeConfig: WriteConfig,
+                     mongoConfigMap: Map[String, String]): (Long, Long) = {
     assert(updateKey.nonEmpty, "当更新模式时，更新key不能为空")
     val updateKeyStr = updateKey.get
 
     val histroyCount = spark.sparkContext.longAccumulator("UPDATE_HISTORY_MONGO_COUNT")
 
     // mongo中现存的数据
-    val mongoHistoryDS = readMongoHistory(readConfig, histroyCount)
+    val mongoHistoryDS = readMongoHistory(readConfig, histroyCount, mongoConfigMap)
 
     // 检查mongo中是否有数据
     if (histroyCount.value <= 0) {
@@ -230,11 +236,39 @@ class SparkMongoSink(spark: SparkSession,
    *
    * @param readConfig mongo配置
    */
-  private def readMongoHistory(readConfig: ReadConfig, historyCount: LongAccumulator): Dataset[Row] = {
-    spark.read.json(MongoSpark.load(spark.sparkContext, readConfig)
-      .mapPartitions(_.map { m =>
-        historyCount.add(1)
-        content2JSON(m)
-      }).toDS)
+  private def readMongoHistory(readConfig: ReadConfig, historyCount: LongAccumulator,
+                               mongoConfigMap: Map[String, String]): Dataset[Row] = {
+    val mongoHistoryJSONData = if (queryOnlyColumn) {
+      // 只获取需要进行关联的字段，以节约内存
+      val humpUpdateKeyArray = if (camelConvert) {
+        Utils.humpArray2lineArray(updateKey.get.split(","))
+      } else updateKey.get.split(",")
+      val schema = DataTypes.createStructType(humpUpdateKeyArray.map(DataTypes.createStructField(_, DataTypes.StringType, true)))
+
+      // 加载mongo指定字段
+      val mongoRow = spark.read.schema(schema).format("com.mongodb.spark.sql").options(mongoConfigMap).load()
+      mongoRow.mapPartitions(iter => {
+        iter.map { row =>
+          val result = for (index <- 0 until humpUpdateKeyArray.size) yield {
+            val fieldName = if (camelConvert) Utils.hump2Line(humpUpdateKeyArray(index)) else humpUpdateKeyArray(index)
+            fieldName -> row.getString(index)
+          }
+          historyCount.add(1)
+          Utils.toJSON[Map[String, AnyRef]](result.toMap)
+        }
+      })
+    } else {
+      // 直接获取全量数据
+      MongoSpark.load(spark.sparkContext, readConfig)
+        .mapPartitions(_.map { m =>
+          historyCount.add(1)
+          content2JSON(m)
+        }).toDS
+    }
+
+    // 使用SparkSession解析json字符串
+    spark.read.json(mongoHistoryJSONData)
   }
+
+
 }

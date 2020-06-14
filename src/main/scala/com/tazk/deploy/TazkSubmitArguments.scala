@@ -39,6 +39,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
   var sparkNumExecutor: String = null
   var mongoDatabase: String = null
   var mongoCollection: String = null
+  var mongoQueryOnlyColumn: Boolean = false
   var mongoReadPreference: String = "primaryPreferred"
   val mongoexternalProperties: HashMap[String, String] = new mutable.HashMap[String, String]()
   var mongoImportCondition: String = null
@@ -89,6 +90,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
        |  spark-executor-core            $sparkExecutorCores
        |  mongo-database                 $mongoDatabase
        |  mongo-collection               $mongoCollection
+       |  mongo-query-only-column        $mongoCollection
        |  mongo-import-condition         $mongoImportCondition
        |  mongo-import-condition-encrypt $mongoImportConditionEncrypt
        |  mongo-update-key               $mongoUpdateKey
@@ -138,6 +140,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
       case SPARK_EXECUTOR_CORES => sparkExecutorCores = value
       case MONGO_DATABASE => mongoDatabase = value
       case MONGO_COLLECTION => mongoCollection = value
+      case MONGO_QUERY_ONLY_COLUMN => mongoQueryOnlyColumn = value.toBoolean
       case MONGO_READ_PREFERENCE => mongoReadPreference = value
       case MONGO_EXTERNAL_CONF =>
         val (confName, confValue) = TazkSubmit.parseTazkConfProperty(value)
@@ -220,6 +223,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
          | Mongo-only:
          |  --mongo-database                  Mongo数据库名称
          |  --mongo-collection                Mongo集合名称
+         |  --mongo-query-only-column         Mongo导出时只从历史中查询关联的列，Boolean类型，默认false
          |  --mongo-conf                      Mongo格外配置
          |  --mongo-import-condition          Mongo增量导入的条件
          |  --mongo-import-condition-encrypt  Mongo增量导入的条件加密类型，

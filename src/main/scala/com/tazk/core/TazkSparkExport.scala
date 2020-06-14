@@ -7,8 +7,6 @@ import com.tazk.source.SparkHiveSource
 import com.tazk.util.Utils
 import org.apache.spark.sql.SparkSession
 
-import scala.collection.mutable
-
 /**
  *
  * 使用Spark将hive根据模式将数据导出到mongo
@@ -30,6 +28,7 @@ object TazkSparkExport extends TazkSparkCore with Logging {
     arguments.mongoCollection,
     arguments.mongoUserName,
     arguments.mongoPassword,
+    arguments.mongoQueryOnlyColumn,
     arguments.mongoOtherConf,
     TazkMongoUpdateModeAction.findOf(arguments.mongoUpdateMode),
     arguments.mongoUpdateKey,

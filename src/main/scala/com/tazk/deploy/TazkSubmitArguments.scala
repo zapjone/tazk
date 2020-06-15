@@ -36,7 +36,7 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
   var sparkExecutorMemory: String = "1G"
   var sparkExecutorCores: String = "1"
   var sparkTotalExecutorCores: String = null
-  var sparkNumExecutor: String = null
+  var sparkNumExecutor: String = "2"
   var mongoDatabase: String = null
   var mongoCollection: String = null
   var mongoQueryOnlyColumn: Boolean = false

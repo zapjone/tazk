@@ -31,7 +31,7 @@ private[tazk] class TazkSparkDepoly(clazz: String,
       .setConf("spark.yarn.queue", appArgs.sparkQueue)
       .setConf("spark.driver.memory", appArgs.sparkDriverMemory)
       .setConf("spark.driver.cores", appArgs.sparkDriverCores)
-      .setConf("spark.num.executors", appArgs.sparkNumExecutor)
+      .setConf("spark.executor.instances", appArgs.sparkNumExecutor)
       .setConf("spark.executor.memory", appArgs.sparkExecutorMemory)
       .setConf("spark.executor.cores", appArgs.sparkExecutorCores)
 

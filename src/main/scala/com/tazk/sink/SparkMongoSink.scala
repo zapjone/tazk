@@ -3,7 +3,7 @@ package com.tazk.sink
 import java.util.{List => JList}
 
 import com.mongodb.client.MongoCollection
-import com.mongodb.client.model.{DeleteOneModel, Filters, UpdateOneModel, UpdateOptions}
+import com.mongodb.client.model.{DeleteManyModel, Filters, UpdateManyModel, UpdateOptions}
 import com.mongodb.spark.config.{ReadConfig, WriteConfig}
 import com.mongodb.spark.sql.TazkMapFunctions.rowToDocumentMapper
 import com.mongodb.spark.{MongoConnector, MongoSpark}
@@ -16,6 +16,7 @@ import org.apache.spark.sql.types.DataTypes
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.util.LongAccumulator
 import org.bson.BsonDocument
+import org.bson.types.ObjectId
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
@@ -45,6 +46,8 @@ class SparkMongoSink(spark: SparkSession,
                      ignoreUpdateKey: Option[String],
                      camelConvert: Boolean)
   extends TazkSink[Dataset[Row], (Long, Long, Long)] with TazkCommon {
+
+  private val MONGO_OBJECT_ID = "_id"
 
   import spark.implicits._
 
@@ -109,13 +112,10 @@ class SparkMongoSink(spark: SparkSession,
       val deleteData = mongoDS.join(currentDS,
         mongoDS(updateKeyStr) === currentDS(updateKeyStr), "left_anti")
 
-      // 驼峰转换名称
-      val convertKeyName = if (camelConvertBool) Utils.line2Hump(updateKeyStr) else updateKeyStr
-
       // 批量删除
       operateMongo[BsonDocument](deleteData, writeConfig, deleteCount, (collection, docList) => {
         val delete = docList.asScala.map { doc =>
-          new DeleteOneModel[BsonDocument](Filters.eq(s"$convertKeyName", doc.get(convertKeyName)))
+          new DeleteManyModel[BsonDocument](Filters.eq(MONGO_OBJECT_ID, new ObjectId(doc.get(MONGO_OBJECT_ID).asString().getValue)))
         }
         collection.bulkWrite(delete.asJava)
       })
@@ -159,19 +159,20 @@ class SparkMongoSink(spark: SparkSession,
 
       // 需要更新的数据
       val currentColumns = currentDS.columns
-      val updateData = currentDS.join(mongoHistoryDS,
-        currentDS(updateKeyStr) === mongoHistoryDS(updateKeyStr), "left_semi")
-        .selectExpr(Utils.findColNams(currentColumns, ignoreUpdateKey.getOrElse("")): _*)
+      val includeQueryField = Utils.findColNams(currentColumns, ignoreUpdateKey.getOrElse(""))
 
-      // 驼峰转换名称
-      val convertKeyName = if (camelConvertBool) Utils.line2Hump(updateKeyStr) else updateKeyStr
+      val updateData = currentDS.join(mongoHistoryDS,
+        currentDS(updateKeyStr) === mongoHistoryDS(updateKeyStr), "inner")
+        .select(includeQueryField.map(currentDS(_)) :+ mongoHistoryDS(MONGO_OBJECT_ID): _*)
 
       // 批量更新
       operateMongo[BsonDocument](updateData, writeConfig, updateMongoCount, (collection, docList) => {
         val upsert = docList.asScala.map { doc =>
+          // 更新中不能带有_id，因这个是不能修改的
+          val objectId = doc.remove(MONGO_OBJECT_ID).asString().getValue
           val modifiers = new BsonDocument()
           modifiers.put("$set", doc)
-          new UpdateOneModel[BsonDocument](Filters.eq(s"$convertKeyName", doc.get(convertKeyName)),
+          new UpdateManyModel[BsonDocument](Filters.eq(MONGO_OBJECT_ID, new ObjectId(objectId)),
             modifiers, new UpdateOptions().upsert(true))
         }
         collection.bulkWrite(upsert.asJava)
@@ -208,12 +209,13 @@ class SparkMongoSink(spark: SparkSession,
     // 创建Mongoecotr
     val mongoConnector = MongoConnector(writeConfig.asOptions)
 
-    val mapper = rowToDocumentMapper(dataset.schema, fieldName => if (camelConvertBool) Utils.line2Hump(fieldName) else fieldName)
+    val mapper = rowToDocumentMapper(dataset.schema, fieldName =>
+      if (camelConvertBool && fieldName != MONGO_OBJECT_ID) Utils.line2Hump(fieldName) else fieldName)
     val documentRdd: RDD[BsonDocument] = dataset.rdd.map(row => mapper(row))
 
-    documentRdd.foreachPartition(iter => if(iter.nonEmpty){
+    documentRdd.foreachPartition(iter => if (iter.nonEmpty) {
       mongoConnector.withCollectionDo(writeConfig, { collection: MongoCollection[BsonDocument] =>
-        iter.grouped(writeConfig.maxBatchSize).foreach(batch =>{
+        iter.grouped(writeConfig.maxBatchSize).foreach(batch => {
           intoMongoFun(collection, batch.toList.asJava)
           longAccumulator.add(batch.size)
         })
@@ -230,16 +232,16 @@ class SparkMongoSink(spark: SparkSession,
                                mongoConfigMap: Map[String, String]): Dataset[Row] = {
     val mongoHistoryJSONData = if (queryOnlyColumn) {
       // 只获取需要进行关联的字段，以节约内存
-      val humpUpdateKeyArray = if (camelConvert) {
+      val humpUpdateKeyArray = (if (camelConvert) {
         Utils.humpArray2lineArray(updateKey.get.split(","))
-      } else updateKey.get.split(",")
+      } else updateKey.get.split(",")) :+ "_id"
       val schema = DataTypes.createStructType(humpUpdateKeyArray.map(DataTypes.createStructField(_, DataTypes.StringType, true)))
 
       // 加载mongo指定字段
       val mongoRow = spark.read.schema(schema).format("com.mongodb.spark.sql").options(mongoConfigMap).load()
       mongoRow.mapPartitions(iter => {
         iter.map { row =>
-          val result = for (index <- 0 until humpUpdateKeyArray.size) yield {
+          val result = for (index <- humpUpdateKeyArray.indices) yield {
             val fieldName = if (camelConvert) Utils.hump2Line(humpUpdateKeyArray(index)) else humpUpdateKeyArray(index)
             fieldName -> row.getString(index)
           }

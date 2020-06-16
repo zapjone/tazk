@@ -34,6 +34,8 @@ private[tazk] class TazkSparkDepoly(clazz: String,
       .setConf("spark.executor.instances", appArgs.sparkNumExecutor)
       .setConf("spark.executor.memory", appArgs.sparkExecutorMemory)
       .setConf("spark.executor.cores", appArgs.sparkExecutorCores)
+      .setConf("spark.default.parallelism", "200")
+      .setConf("spark.sql.shuffle.partitions", "200")
 
     if (null != appArgs.sparkTotalExecutorCores) {
       launcher = launcher.setConf("spark.cores.max", appArgs.sparkTotalExecutorCores)

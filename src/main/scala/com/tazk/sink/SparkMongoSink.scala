@@ -1,20 +1,21 @@
 package com.tazk.sink
 
-import java.lang.{Object => JObject}
-import java.util.{List => JList, Map => JMap}
+import java.util.{List => JList}
 
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.{DeleteOneModel, Filters, UpdateOneModel, UpdateOptions}
 import com.mongodb.spark.config.{ReadConfig, WriteConfig}
+import com.mongodb.spark.sql.TazkMapFunctions.rowToDocumentMapper
 import com.mongodb.spark.{MongoConnector, MongoSpark}
 import com.tazk.common.TazkCommon
 import com.tazk.deploy.TazkMongoUpdateModeAction
 import com.tazk.deploy.TazkMongoUpdateModeAction.TazkMongoUpdateModeAction
 import com.tazk.util.Utils
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.DataTypes
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.util.LongAccumulator
-import org.bson.Document
+import org.bson.BsonDocument
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
@@ -112,9 +113,9 @@ class SparkMongoSink(spark: SparkSession,
       val convertKeyName = if (camelConvertBool) Utils.line2Hump(updateKeyStr) else updateKeyStr
 
       // 批量删除
-      operateMongo[Document](deleteData, writeConfig, deleteCount, (collection, docList) => {
+      operateMongo[BsonDocument](deleteData, writeConfig, deleteCount, (collection, docList) => {
         val delete = docList.asScala.map { doc =>
-          new DeleteOneModel[Document](Filters.eq(s"$convertKeyName", doc.get(convertKeyName)))
+          new DeleteOneModel[BsonDocument](Filters.eq(s"$convertKeyName", doc.get(convertKeyName)))
         }
         collection.bulkWrite(delete.asJava)
       })
@@ -166,11 +167,11 @@ class SparkMongoSink(spark: SparkSession,
       val convertKeyName = if (camelConvertBool) Utils.line2Hump(updateKeyStr) else updateKeyStr
 
       // 批量更新
-      operateMongo[Document](updateData, writeConfig, updateMongoCount, (collection, docList) => {
+      operateMongo[BsonDocument](updateData, writeConfig, updateMongoCount, (collection, docList) => {
         val upsert = docList.asScala.map { doc =>
-          val modifiers = new Document()
+          val modifiers = new BsonDocument()
           modifiers.put("$set", doc)
-          new UpdateOneModel[Document](Filters.eq(s"$convertKeyName", doc.get(convertKeyName)),
+          new UpdateOneModel[BsonDocument](Filters.eq(s"$convertKeyName", doc.get(convertKeyName)),
             modifiers, new UpdateOptions().upsert(true))
         }
         collection.bulkWrite(upsert.asJava)
@@ -189,7 +190,7 @@ class SparkMongoSink(spark: SparkSession,
    */
   private def insert(dataset: Dataset[Row], writeConfig: WriteConfig): Long = {
     val insertMongoCount = spark.sparkContext.longAccumulator("INSERT_MONGO_COUNT")
-    operateMongo[Document](dataset, writeConfig, insertMongoCount, (collection, docList) => collection.insertMany(docList))
+    operateMongo[BsonDocument](dataset, writeConfig, insertMongoCount, (collection, docList) => collection.insertMany(docList))
     insertMongoCount.value
   }
 
@@ -202,32 +203,21 @@ class SparkMongoSink(spark: SparkSession,
    * @param intoMongoFun    进入mongo的方式，insert或者update
    */
   private def operateMongo[D: ClassTag](dataset: Dataset[Row], writeConfig: WriteConfig,
-                                        longAccumulator: LongAccumulator, intoMongoFun: (MongoCollection[D], JList[Document]) => Unit): Unit = {
+                                        longAccumulator: LongAccumulator, intoMongoFun: (MongoCollection[BsonDocument], JList[BsonDocument]) => Unit): Unit = {
 
-    // 获取dataset的所有列名,如果需要将列名进行转换，则进行转换
-    val colNames = if (camelConvert) {
-      dataset.columns.map(Utils.line2Hump)
-    } else dataset.columns
+    // 创建Mongoecotr
+    val mongoConnector = MongoConnector(writeConfig.asOptions)
 
-    dataset.foreachPartition(rowPartition => {
-      // 创建Mongoecotr
-      val mongoConnector = MongoConnector(writeConfig.asOptions)
+    val mapper = rowToDocumentMapper(dataset.schema, fieldName => if (camelConvertBool) Utils.line2Hump(fieldName) else fieldName)
+    val documentRdd: RDD[BsonDocument] = dataset.rdd.map(row => mapper(row))
 
-      if (rowPartition.nonEmpty) {
-        // 将Row转换成Document后，再进行批量插入
-        mongoConnector.withCollectionDo(writeConfig, { collection: MongoCollection[D] =>
-          val docList = rowPartition.map(row => {
-            val valMap: JMap[String, JObject] = (for (index <- 0 until row.size) yield {
-              colNames(index) -> row.get(index).asInstanceOf[JObject]
-            }).toMap.asJava
-            new Document(valMap)
-          }).toList.asJava
-
-          // 添加到mongo中
-          intoMongoFun(collection, docList)
-          longAccumulator.add(docList.size())
+    documentRdd.foreachPartition(iter => if(iter.nonEmpty){
+      mongoConnector.withCollectionDo(writeConfig, { collection: MongoCollection[BsonDocument] =>
+        iter.grouped(writeConfig.maxBatchSize).foreach(batch =>{
+          intoMongoFun(collection, batch.toList.asJava)
+          longAccumulator.add(batch.size)
         })
-      }
+      })
     })
   }
 

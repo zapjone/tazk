@@ -1,5 +1,6 @@
 # tazk
-mongo和大数据同步工具
+mongo和大数据同步工具,Mongo同步数据到Hive;Hive同步数据到Mongo中。
+即使Mongo中没有建立索引，速度以然不受影响。
 
 # 如何使用
 

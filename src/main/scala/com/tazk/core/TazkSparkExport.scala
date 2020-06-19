@@ -2,10 +2,9 @@ package com.tazk.core
 
 import com.tazk.deploy.TazkMongoUpdateModeAction
 import com.tazk.internal.Logging
-import com.tazk.sink.{SparkMongoProxySink, SparkMongoSink}
+import com.tazk.sink.SparkMongoSink
 import com.tazk.source.SparkHiveSource
 import com.tazk.util.Utils
-import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.SparkSession
 
 /**
@@ -24,42 +23,18 @@ object TazkSparkExport extends TazkSparkCore with Logging {
     Option(arguments.hiveIgnoreExportKey),
     arguments.hiveCondition.getOrElse("1=1"))
 
-  /**
-   * 导出，是否启用mongo代理，减少mongo压力
-   */
-  lazy private val sparkMongo = (spark: SparkSession, arguments: SparkExportArguments) => {
-    if (arguments.mongoProxyEnable) {
-      val proxyDB = if (StringUtils.isEmpty(arguments.mongoProxyDatabase)) arguments.hiveDatabase else arguments.mongoProxyDatabase
-      val proxyTable = if (StringUtils.isEmpty(arguments.mongoProxyTable)) s"${arguments.hiveTable}__mongo_proxy" else arguments.mongoProxyTable
-      new SparkMongoProxySink(spark,
-        arguments.mongoUri,
-        arguments.mongoDatabase,
-        arguments.mongoCollection,
-        arguments.mongoUserName,
-        arguments.mongoPassword,
-        arguments.mongoQueryOnlyColumn,
-        arguments.mongoOtherConf,
-        TazkMongoUpdateModeAction.findOf(arguments.mongoUpdateMode),
-        arguments.mongoUpdateKey,
-        arguments.mongoIgnoreUpdateKey,
-        arguments.mongoCamelConvert,
-        proxyDB, proxyTable)
-    } else {
-      new SparkMongoSink(spark,
-        arguments.mongoUri,
-        arguments.mongoDatabase,
-        arguments.mongoCollection,
-        arguments.mongoUserName,
-        arguments.mongoPassword,
-        arguments.mongoQueryOnlyColumn,
-        arguments.mongoOtherConf,
-        TazkMongoUpdateModeAction.findOf(arguments.mongoUpdateMode),
-        arguments.mongoUpdateKey,
-        arguments.mongoIgnoreUpdateKey,
-        arguments.mongoCamelConvert)
-    }
-
-  }
+  lazy private val sparkMongo = (spark: SparkSession, arguments: SparkExportArguments) => new SparkMongoSink(spark,
+    arguments.mongoUri,
+    arguments.mongoDatabase,
+    arguments.mongoCollection,
+    arguments.mongoUserName,
+    arguments.mongoPassword,
+    arguments.mongoQueryOnlyColumn,
+    arguments.mongoOtherConf,
+    TazkMongoUpdateModeAction.findOf(arguments.mongoUpdateMode),
+    arguments.mongoUpdateKey,
+    arguments.mongoIgnoreUpdateKey,
+    arguments.mongoCamelConvert)
 
   /**
    * 导出操作

@@ -40,7 +40,7 @@ private[tazk] object TazkFactory {
       SparkExportArguments(tazkArgs.name, tazkArgs.connect, tazkArgs.mongoDatabase, tazkArgs.mongoCollection,
         tazkArgs.username, tazkArgs.password, tazkArgs.mongoQueryOnlyColumn, tazkArgs.mongoCamelConvert, tazkArgs.mongoUpdateMode,
         Option(tazkArgs.mongoUpdateKey), Option(tazkArgs.mongoIgnoreUpdateKey),
-        Option(tazkArgs.mongoexternalProperties.toMap),
+        Option(tazkArgs.mongoexternalProperties.toMap), tazkArgs.mongoProxyEnable, tazkArgs.mongoProxyDatabase, tazkArgs.mongoProxyTable,
         tazkArgs.hiveDatabase, tazkArgs.hiveTable, tazkArgs.hiveIgnoreExportKey, Option(tazkArgs.hiveExportCondition))
     }
 

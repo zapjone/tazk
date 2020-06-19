@@ -53,6 +53,9 @@ public class TazkSubmitOptionParser {
     protected final String MONGO_IGNORE_UPDATE_KEY = "--mongo-ignore-update-key";
     protected final String MONGO_UPDATE_MODE = "--mongo-update-mode";
     protected final String MONGO_CAMEL_CONVERT = "--mongo-camel-convert";
+    protected final String MONGO_PROXY_ENABLE = "--mongo-proxy-enable";
+    protected final String MONGO_PROXY_DATABASE = "--mongo-proxy-database";
+    protected final String MONGO_PROXY_TABLE = "--mongo-proxy-table";
 
     /**
      * hive launcher arguments.

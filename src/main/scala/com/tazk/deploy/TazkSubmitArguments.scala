@@ -48,6 +48,9 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
   var mongoIgnoreUpdateKey: String = null
   var mongoUpdateMode: String = TazkMongoUpdateModeAction.allowInsert
   var mongoCamelConvert: Boolean = true
+  var mongoProxyEnable: Boolean = false
+  var mongoProxyDatabase: String = null
+  var mongoProxyTable: String = null
   var hiveDatabase: String = "default"
   var hiveTable: String = null
   var hiveAutoCreateTable: Boolean = false
@@ -152,6 +155,9 @@ private[tazk] class TazkSubmitArguments(args: List[String], env: Map[String, Str
       case MONGO_IGNORE_UPDATE_KEY => mongoIgnoreUpdateKey = value
       case MONGO_UPDATE_MODE => mongoUpdateMode = value
       case MONGO_CAMEL_CONVERT => mongoCamelConvert = value.toBoolean
+      case MONGO_PROXY_ENABLE => mongoProxyEnable = value.toBoolean
+      case MONGO_PROXY_DATABASE => mongoProxyDatabase = value
+      case MONGO_PROXY_TABLE => mongoProxyTable = value
       case HIVE_DATABASE => hiveDatabase = value
       case HIVE_TABLE => hiveTable = value
       case HIVE_AUTO_CREATE_TABLE => hiveAutoCreateTable = value.toBoolean

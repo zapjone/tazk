@@ -13,7 +13,7 @@ import com.tazk.deploy.TazkMongoUpdateModeAction.TazkMongoUpdateModeAction
 import com.tazk.util.Utils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.DataTypes
-import org.apache.spark.sql.{Dataset, Row, SparkSession}
+import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
 import org.apache.spark.util.LongAccumulator
 import org.bson.BsonDocument
 import org.bson.types.ObjectId
@@ -108,9 +108,11 @@ class SparkMongoSink(spark: SparkSession,
     if (historyCount.value <= 0) {
       (insert(currentDS, writeConfig), 0, 0)
     } else {
+      // join columns
+      val joinColumns = multiJoinColumns[Row](updateKeyStr, currentDS, mongoDS)
+
       // 使用left_anti进行join，返回左边表中不存在于右边表中的数据，也就是历史表存在，当前不存在
-      val deleteData = mongoDS.join(currentDS,
-        mongoDS(updateKeyStr) === currentDS(updateKeyStr), "left_anti")
+      val deleteData = mongoDS.join(currentDS, joinColumns, "left_anti")
 
       // 批量删除
       operateMongo[BsonDocument](deleteData, writeConfig, deleteCount, (collection, docList) => {
@@ -150,10 +152,11 @@ class SparkMongoSink(spark: SparkSession,
     if (histroyCount.value <= 0) {
       (insert(currentDS, writeConfig), 0)
     } else {
+      // join columns
+      val joinColumns = multiJoinColumns[Row](updateKeyStr, currentDS, mongoHistoryDS)
 
       // 需要新增添加的数据，left_anti返回左边表在右边表中无法匹配的数据，也就是当前存在历史不存在
-      val preInsert = currentDS.join(mongoHistoryDS,
-        currentDS(updateKeyStr) === mongoHistoryDS(updateKeyStr), "left_anti")
+      val preInsert = currentDS.join(mongoHistoryDS, joinColumns, "left_anti")
       val updateMongoCount = spark.sparkContext.longAccumulator("UPDATE_MONGO_COUNT")
       val insertCount = insert(preInsert, writeConfig)
 
@@ -161,8 +164,7 @@ class SparkMongoSink(spark: SparkSession,
       val currentColumns = currentDS.columns
       val includeQueryField = Utils.findColNams(currentColumns, ignoreUpdateKey.getOrElse(""))
 
-      val updateData = currentDS.join(mongoHistoryDS,
-        currentDS(updateKeyStr) === mongoHistoryDS(updateKeyStr), "inner")
+      val updateData = currentDS.join(mongoHistoryDS, joinColumns, "inner")
         .select(includeQueryField.map(currentDS(_)) :+ mongoHistoryDS(MONGO_OBJECT_ID): _*)
 
       // 批量更新
@@ -221,6 +223,21 @@ class SparkMongoSink(spark: SparkSession,
         })
       })
     })
+  }
+
+  /**
+   * 多条件关联
+   */
+  private def multiJoinColumns[T](updateKeyStr: String, current: Dataset[T], history: Dataset[T]): Column = {
+    val multilUpdateKeys = updateKeyStr.split(",")
+
+    // multi join columns
+    var multilJoinColumn: Column = null
+    multilUpdateKeys.foreach(key => {
+      if (null == multilJoinColumn) current(key) === history(key)
+      else multilJoinColumn = multilJoinColumn && current(key) === history(key)
+    })
+    multilJoinColumn
   }
 
   /**
